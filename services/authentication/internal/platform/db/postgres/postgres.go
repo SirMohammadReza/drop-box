@@ -11,13 +11,13 @@ type PostgresDB struct {
 	DB *gorm.DB
 }
 
-func (p *PostgresDB) Create(c context.Context, user user.User) error {
+func (p *PostgresDB) Create(c context.Context, user *user.User) (*user.User, error) {
 	result := p.DB.WithContext(c).Create(user)
 	if result.Error != nil {
-		return result.Error
+		return nil, result.Error
 	}
 
-	return nil
+	return user, nil
 }
 
 func (p *PostgresDB) FindByPhoneNumber(c context.Context, phoneNumber string) (*user.User, error) {
