@@ -3,7 +3,8 @@ services:
     image: golang:1.26-alpine3.23
     container_name: authentication_container
     working_dir: /app
-    command: sh -c "go build -o main . && ./main"
+    # command: sh -c "go build -o main . && ./main"
+    tty: true
     volumes:
       - .:/app
     networks:
@@ -24,9 +25,25 @@ services:
     networks:
       - app-network
 
+  migrate:
+    image: migrate/migrate:latest
+    container_name: migrate_container
+    volumes:
+      - migrations:/migrations
+    command:
+      - -path=/internal/migrations/
+      - -database=postgres://admin:4321@postgres:5432/auth?sslmode=disable
+      - up
+
+    entrypoint: ["sleep", "infinity"]
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
 volumes:
   pgdata:
-  pgadmin_data:
+  migrations:
 
 networks:
   app-network:
