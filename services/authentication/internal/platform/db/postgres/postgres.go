@@ -1,32 +1,27 @@
 package postgres
 
 import (
-	"authentication/internal/user"
-	"context"
+	"log"
+	"sync"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-type PostgresDB struct {
-	DB *gorm.DB
-}
+var (
+	_db  *gorm.DB
+	once sync.Once
+)
 
-func (p *PostgresDB) Create(c context.Context, user *user.User) (*user.User, error) {
-	result := p.DB.WithContext(c).Create(user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
+func GetDB() *gorm.DB {
+	once.Do(func() {
+		dsn := "host=localhost user=postgres password=postgres dbname=auth port=5432 sslmode=disable TimeZone=Asia/Tehran"
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			log.Fatalf("Could not create database: %s", err.Error())
+		}
+		_db = db
+	})
 
-	return user, nil
-}
-
-func (p *PostgresDB) FindByPhoneNumber(c context.Context, phoneNumber string) (*user.User, error) {
-	var user user.User
-
-	result := p.DB.WithContext(c).Where("phone_number = ?", phoneNumber).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return &user, nil
+	return _db
 }
