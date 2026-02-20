@@ -7,17 +7,17 @@ import (
 )
 
 type PostgresRepository struct {
-	DB *gorm.DB
+	db *gorm.DB
 }
 
 func NewPostgresRepository(db *gorm.DB) *PostgresRepository {
 	return &PostgresRepository{
-		DB: db,
+		db: db,
 	}
 }
 
 func (pr *PostgresRepository) Create(c context.Context, user *User) (*User, error) {
-	res := pr.DB.WithContext(c).Create(user)
+	res := pr.db.WithContext(c).Create(user)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -27,7 +27,7 @@ func (pr *PostgresRepository) Create(c context.Context, user *User) (*User, erro
 
 func (pr *PostgresRepository) FindByPhoneNumber(c context.Context, phoneNumber string) (*User, error) {
 	var user User
-	res := pr.DB.Where("phone_number = ?", phoneNumber).Find(&user)
+	res := pr.db.Where("phone_number = ?", phoneNumber).Find(&user)
 	if res.Error != nil {
 		return nil, res.Error
 	}
