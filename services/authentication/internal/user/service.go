@@ -1,8 +1,6 @@
 package user
 
 import (
-	"authentication/internal/platform/encryption"
-	"authentication/internal/token"
 	"context"
 	"errors"
 )
@@ -12,10 +10,20 @@ type UserRepository interface {
 	FindByPhoneNumber(c context.Context, phoneNumber string) (*User, error)
 }
 
+type TokenServiceNeed interface {
+	GenerateTokenPair(c context.Context, userID uint) (string, string, error)
+	DeleteToken(c context.Context, token string) error
+}
+
+type PasswordManagerNeed interface {
+	HashPassword(password string) (string, error)
+	CheckHash(password, hashValue string) bool
+}
+
 type UserService struct {
-	userRepo        UserRepository
-	passwordManager encryption.EncryptionService
-	tokenService    *token.TokenService
+	userRepository      UserRepository
+	passwordManagerNeed PasswordManagerNeed
+	tokenNeed           TokenServiceNeed
 }
 
 type AuthResponse struct {
@@ -23,16 +31,16 @@ type AuthResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-func NewUserService(ur UserRepository, pm encryption.EncryptionService, ts token.TokenService) *UserService {
+func NewUserService(ur UserRepository, pmn PasswordManagerNeed, tn TokenServiceNeed) *UserService {
 	return &UserService{
-		userRepo:        ur,
-		passwordManager: pm,
-		tokenService:    &ts,
+		userRepository:      ur,
+		passwordManagerNeed: pmn,
+		tokenNeed:           tn,
 	}
 }
 
-func (us *UserService) StoreNewUser(c context.Context, name, phoneNumber, password string) (*AuthResponse, error) {
-	hashPassword, err := us.passwordManager.HashPassword(password)
+func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, password string) (*AuthResponse, error) {
+	hashPassword, err := us.passwordManagerNeed.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
@@ -43,13 +51,13 @@ func (us *UserService) StoreNewUser(c context.Context, name, phoneNumber, passwo
 		Password:    hashPassword,
 	}
 
-	user, err := us.userRepo.Create(c, &newUser)
+	user, err := us.userRepository.Create(c, &newUser)
 
 	if err != nil {
 		return nil, err
 	}
 
-	accessToken, refreshToken, err := us.tokenService.GenerateTokenPair(c, user.ID)
+	accessToken, refreshToken, err := us.tokenNeed.GenerateTokenPair(c, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +69,7 @@ func (us *UserService) StoreNewUser(c context.Context, name, phoneNumber, passwo
 }
 
 func (us *UserService) GetUserInfo(c context.Context, phoneNumber string) (*User, error) {
-	user, err := us.userRepo.FindByPhoneNumber(c, phoneNumber)
+	user, err := us.userRepository.FindByPhoneNumber(c, phoneNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -70,17 +78,17 @@ func (us *UserService) GetUserInfo(c context.Context, phoneNumber string) (*User
 }
 
 func (us *UserService) Login(c context.Context, phoneNumber, password string) (*AuthResponse, error) {
-	user, err := us.userRepo.FindByPhoneNumber(c, phoneNumber)
+	user, err := us.userRepository.FindByPhoneNumber(c, phoneNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	valid := us.passwordManager.CheckHash(password, user.Password)
+	valid := us.passwordManagerNeed.CheckHash(password, user.Password)
 	if !valid {
 		return nil, errors.New("Incorrect password")
 	}
 
-	accessToken, refreshToken, err := us.tokenService.GenerateTokenPair(c, user.ID)
+	accessToken, refreshToken, err := us.tokenNeed.GenerateTokenPair(c, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -92,5 +100,5 @@ func (us *UserService) Login(c context.Context, phoneNumber, password string) (*
 }
 
 func (us *UserService) Logout(c context.Context, token string) error {
-	return us.tokenService.DeleteToken(c, token)
+	return us.tokenNeed.DeleteToken(c, token)
 }
