@@ -4,6 +4,10 @@ import "golang.org/x/crypto/bcrypt"
 
 type EncryptionService struct{}
 
+func NewEncryptionService() *EncryptionService {
+	return &EncryptionService{}
+}
+
 func (es *EncryptionService) HashPassword(password string) (string, error) {
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
