@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package token;
+
+option go_package = "./internal/token/proto";
+
+message CheckTokenRequest {
+  string token = 1;
+}
+
+message CheckTokenResponse{
+  bool valid = 1;
+}
+
+// token service
+service TokenService {
+    // Check token
+  rpc IsTokenValid (CheckTokenRequest) returns (CheckTokenResponse);
+}

@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package user;
+
+option go_package = "./internal/user/proto";
+
+message RegisterRequest {
+  string name         = 1;
+  string phone_number = 2;
+  string password     = 3;
+}
+
+message LoginRequest {
+  string phone_number = 1;
+  string password     = 2;
+}
+
+message AuthResponse {
+  string refresh_token = 1;
+  string access_token  = 2;
+}
+
+message LogoutRequset {
+  string token = 1;
+}
+
+// User Service
+service UserService {
+    // Register New User
+  rpc RegisterUser(RegisterRequest) returns (AuthResponse);
+  // Login
+  rpc Login(LoginRequest) returns (AuthResponse);
+  // logout
+  rpc Logout (LogoutRequset) returns (google.protobuf.Empty);
+}
