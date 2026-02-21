@@ -1,16 +1,55 @@
 package main
 
 import (
+	grpcHandlers "authentication/internal/grpc"
+	"authentication/internal/platform/db/postgres"
+	"authentication/internal/platform/encryption"
+	"authentication/internal/token"
+	tokenProto "authentication/internal/token/proto/token"
+	"authentication/internal/user"
+	userProto "authentication/internal/user/proto/user"
 	"errors"
 	"log"
+	"net"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	// postgresDB := postgres.GetDB()
+	postgresDB := postgres.GetDB()
+	// runMigrations()
+
+	lis, err := net.Listen("tcp", "50051")
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+
+	pm := encryption.NewEncryptionService()
+
+	tr := token.NewPostgresRepository(postgresDB)
+	ts := token.NewTokenService(tr)
+
+	ur := user.NewPostgresRepository(postgresDB)
+	us := user.NewUserService(ur, pm, ts)
+
+	userHandler := grpcHandlers.NewUserHandler(us)
+	userProto.RegisterUserServiceServer(s, userHandler)
+
+	tokenHandler := grpcHandlers.NewTokenHandler(ts)
+	tokenProto.RegisterTokenServiceServer(s, tokenHandler)
+
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("Failed to serve grpc server: %v", err)
+	}
+
+}
+
+func runMigrations() {
 	dsn := "postgres://postgres:postgres@localhost:5432/auth?sslmode=disable"
 	migrations, err := migrate.New("file://internal/migrations", dsn)
 	if err != nil {
