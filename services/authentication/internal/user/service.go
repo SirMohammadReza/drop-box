@@ -31,7 +31,7 @@ func NewUserService(ur UserRepository, pm encryption.EncryptionService, ts token
 	}
 }
 
-func (us *UserService) StoreNewUser(c context.Context, name, phoneNumber, password string) (*User, error) {
+func (us *UserService) StoreNewUser(c context.Context, name, phoneNumber, password string) (*AuthResponse, error) {
 	hashPassword, err := us.passwordManager.HashPassword(password)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,15 @@ func (us *UserService) StoreNewUser(c context.Context, name, phoneNumber, passwo
 		return nil, err
 	}
 
-	return user, nil
+	accessToken, refreshToken, err := us.tokenService.GenerateTokenPair(c, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
 
 func (us *UserService) GetUserInfo(c context.Context, phoneNumber string) (*User, error) {
