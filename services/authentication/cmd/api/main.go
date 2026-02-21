@@ -22,7 +22,7 @@ func main() {
 	postgresDB := postgres.GetDB()
 	// runMigrations()
 
-	lis, err := net.Listen("tcp", "50051")
+	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
@@ -47,10 +47,11 @@ func main() {
 		log.Fatalf("Failed to serve grpc server: %v", err)
 	}
 
+	log.Println("Project started successfully!")
 }
 
 func runMigrations() {
-	dsn := "postgres://postgres:postgres@localhost:5432/auth?sslmode=disable"
+	dsn := "postgres://admin:4321@postgres:5432/auth?sslmode=disable"
 	migrations, err := migrate.New("file://internal/migrations", dsn)
 	if err != nil {
 		log.Fatalf("Could not run migrations instance: %v", err)

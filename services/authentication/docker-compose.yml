@@ -2,6 +2,10 @@ services:
   app:
     image: golang:1.26-alpine3.23
     container_name: authentication_container
+    command: sh -c "go run ./cmd/api/main.go"
+    depends_on:
+      - postgres
+      - migrate
     working_dir: /app
     ports:
       - "50051:50051"

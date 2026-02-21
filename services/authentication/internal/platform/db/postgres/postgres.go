@@ -15,7 +15,7 @@ var (
 
 func GetDB() *gorm.DB {
 	once.Do(func() {
-		dsn := "host=localhost user=postgres password=postgres dbname=auth port=5432 sslmode=disable TimeZone=Asia/Tehran"
+		dsn := "host=postgres user=admin password=4321 dbname=auth port=5432 sslmode=disable TimeZone=Asia/Tehran"
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
 			log.Fatalf("Could not create database: %s", err.Error())
