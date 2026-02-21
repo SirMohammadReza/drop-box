@@ -1,23 +1,27 @@
 services:
   app:
-    image: golang:1.26-alpine3.23
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: authentication_container
-    command: sh -c "go run ./cmd/api/main.go"
     depends_on:
-      - postgres
-      - migrate
-    working_dir: /app
+      postgres:
+        condition: service_healthy
     ports:
       - "50051:50051"
-    volumes:
-      - .:/app
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: admin
+      DB_PASSWORD: 4321
+      DB_NAME: auth
     networks:
       - app-network
 
   postgres:
     image: postgres:16-alpine
     container_name: postgres_container
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: 4321
@@ -26,28 +30,33 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - app-network
 
   migrate:
     image: migrate/migrate:latest
     container_name: migrate_container
-    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
       - ./internal/migrations:/migrations
     command:
-      - -path=/migrations
-      - -database=postgres://admin:4321@postgres:5432/auth?sslmode=disable
-      - up
-
-    depends_on:
-      - postgres
+      [
+        "-path=/migrations",
+        "-database=postgres://admin:4321@postgres:5432/auth?sslmode=disable",
+        "up"
+      ]
     networks:
       - app-network
 
 volumes:
   pgdata:
-  migrations:
 
 networks:
   app-network:
