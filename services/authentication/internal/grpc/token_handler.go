@@ -18,7 +18,7 @@ func NewTokenHandler(ts *token.TokenService) *TokenHandler {
 }
 
 func (th *TokenHandler) IsTokenValid(c context.Context, req *proto.CheckTokenRequest) (*proto.CheckTokenResponse, error) {
-	response := th.tokenService.IsTokenValid(req.Token)
+	response := th.tokenService.IsTokenValid(c, req.Token)
 
 	return &proto.CheckTokenResponse{
 		Valid: response,

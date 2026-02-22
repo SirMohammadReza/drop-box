@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -23,6 +24,15 @@ func (pr *PostgresRepository) StoreRefreshToken(c context.Context, userID uint, 
 	}
 
 	return pr.db.WithContext(c).Create(&t).Error
+}
+
+func (pr *PostgresRepository) IsTokenExists(c context.Context, token string) bool {
+	err := pr.db.WithContext(c).First(&Token{}, "token = ?", token).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false
+	}
+
+	return true
 }
 
 func (pr *PostgresRepository) RevokeToken(c context.Context, token string) error {

@@ -2,18 +2,18 @@ package token
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret string = "3d86f180105efab801fc9178d569dbf1"
+var jwtSecret []byte = []byte("3d86f180105efab801fc9178d569dbf1")
 
 type TokenRepository interface {
 	StoreRefreshToken(c context.Context, userID uint, token string) error
 	RevokeToken(c context.Context, token string) error
 	RevokeTokenByUserID(c context.Context, userID uint) error
+	IsTokenExists(c context.Context, token string) bool
 }
 
 type Claims struct {
@@ -60,23 +60,20 @@ func (ts *TokenService) generateJWT(userID uint, expiry time.Duration) (string, 
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(jwtSecret))
+	return token.SignedString(jwtSecret)
 }
 
-func (ts *TokenService) IsTokenValid(token string) bool {
-	t, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (any, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-		}
+func (ts *TokenService) IsTokenValid(c context.Context, token string) bool {
+	// Check for stateless
+	// t, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (any, error) {
+	// 	if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+	// 		return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+	// 	}
 
-		return jwtSecret, nil
-	})
+	// 	return jwtSecret, nil
+	// })
 
-	if err != nil {
-		return false
-	}
-
-	return t.Valid
+	return ts.tokenRepository.IsTokenExists(c, token)
 }
 
 func (ts *TokenService) DeleteToken(c context.Context, token string) error {
