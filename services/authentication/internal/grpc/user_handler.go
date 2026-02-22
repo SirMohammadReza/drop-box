@@ -39,7 +39,7 @@ func (uh *UserHandler) Logout(c context.Context, req *proto.LogoutRequset) (*emp
 	return &emptypb.Empty{}, nil
 }
 
-func (uh *UserHandler) Register(c context.Context, req *proto.RegisterRequest) (*proto.AuthResponse, error) {
+func (uh *UserHandler) RegisterUser(c context.Context, req *proto.RegisterRequest) (*proto.AuthResponse, error) {
 	response, err := uh.userService.RegisterUser(c, req.Name, req.PhoneNumber, req.Password)
 	if err != nil {
 		return nil, err
