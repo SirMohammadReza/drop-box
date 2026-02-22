@@ -60,7 +60,7 @@ func (ts *TokenService) generateJWT(userID uint, expiry time.Duration) (string, 
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString([]byte(jwtSecret))
 }
 
 func (ts *TokenService) IsTokenValid(token string) bool {

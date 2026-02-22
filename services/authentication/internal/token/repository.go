@@ -19,10 +19,10 @@ func NewPostgresRepository(db *gorm.DB) *PostgresRepository {
 func (pr *PostgresRepository) StoreRefreshToken(c context.Context, userID uint, token string) error {
 	t := Token{
 		UserID: userID,
-		Toekn:  token,
+		Token:  token,
 	}
 
-	return pr.db.WithContext(c).Create(t).Error
+	return pr.db.WithContext(c).Create(&t).Error
 }
 
 func (pr *PostgresRepository) RevokeToken(c context.Context, token string) error {

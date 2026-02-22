@@ -5,5 +5,5 @@ import "gorm.io/gorm"
 type Token struct {
 	gorm.Model
 	UserID uint   `json:"user_id"`
-	Toekn  string `gorm:"varchar(255);not null" json:"token"`
+	Token  string `gorm:"varchar(255);not null" json:"token"`
 }
