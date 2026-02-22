@@ -20,7 +20,7 @@ import (
 
 func main() {
 	postgresDB := postgres.GetDB()
-	// runMigrations()
+	runMigrations()
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -47,7 +47,6 @@ func main() {
 		log.Fatalf("Failed to serve grpc server: %v", err)
 	}
 
-	log.Println("Project started successfully!")
 }
 
 func runMigrations() {
