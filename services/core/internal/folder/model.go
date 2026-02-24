@@ -1,6 +1,8 @@
 package folder
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -10,6 +12,6 @@ type Folder struct {
 	Name      string         `bson:"name"`
 	ParentID  *bson.ObjectID `bson:"parent_id,omitempty"`
 	Path      string         `bson:"path"`
-	CreatedAt bson.Timestamp `bson:"created_at"`
-	UpdatedAt bson.Timestamp `bson:"updated_at"`
+	CreatedAt time.Time      `bson:"created_at"`
+	UpdatedAt time.Time      `bson:"updated_at"`
 }
