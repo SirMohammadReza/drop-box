@@ -43,6 +43,8 @@ func main() {
 	tokenHandler := grpcHandlers.NewTokenHandler(ts)
 	tokenProto.RegisterTokenServiceServer(s, tokenHandler)
 
+	log.Println("App started...")
+
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve grpc server: %v", err)
 	}
