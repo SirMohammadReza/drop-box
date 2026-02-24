@@ -20,6 +20,7 @@ message LoginRequest {
 message AuthResponse {
   string refresh_token = 1;
   string access_token  = 2;
+  string name          = 3;
 }
 
 message LogoutRequset {
@@ -28,7 +29,7 @@ message LogoutRequset {
 
 // User Service
 service UserService {
-    // Register New User
+  // Register New User
   rpc RegisterUser(RegisterRequest) returns (AuthResponse);
   // Login
   rpc Login(LoginRequest) returns (AuthResponse);

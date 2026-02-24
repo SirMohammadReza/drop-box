@@ -29,6 +29,7 @@ type UserService struct {
 type AuthResponse struct {
 	AccessToken  string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
+	Name         string `json:"name"`
 }
 
 func NewUserService(ur UserRepository, pmn PasswordManagerNeed, tn TokenServiceNeed) *UserService {
@@ -65,6 +66,7 @@ func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, passwo
 	return &AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		Name:         user.Name,
 	}, nil
 }
 
@@ -96,6 +98,7 @@ func (us *UserService) Login(c context.Context, phoneNumber, password string) (*
 	return &AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		Name:         user.Name,
 	}, nil
 }
 
