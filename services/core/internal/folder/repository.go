@@ -38,3 +38,14 @@ func (mr *MongoRepository) Create(c context.Context, f *Folder) error {
 	_, err := mr.collection.InsertOne(c, f)
 	return err
 }
+
+func (mr *MongoRepository) GetFolderByName(c context.Context, folderName string) (*Folder, error) {
+	var folder Folder
+	filter := bson.M{"name": folderName}
+
+	if err := mr.collection.FindOne(c, filter).Decode(&folder); err != nil {
+		return nil, err
+	}
+
+	return &folder, nil
+}
