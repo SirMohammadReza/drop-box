@@ -5,6 +5,13 @@ import (
 	"errors"
 )
 
+type Provider interface {
+	RegisterUser(c context.Context, name, phoneNumber, password string) (*AuthResponse, error)
+	GetUserInfo(c context.Context, phoneNumber string) (*User, error)
+	Login(c context.Context, phoneNumber, password string) (*AuthResponse, error)
+	Logout(c context.Context, token string) error
+}
+
 type UserRepository interface {
 	Create(c context.Context, user *User) (*User, error)
 	FindByPhoneNumber(c context.Context, phoneNumber string) (*User, error)
@@ -32,7 +39,7 @@ type AuthResponse struct {
 	Name         string `json:"name"`
 }
 
-func NewUserService(ur UserRepository, pm PasswordManager, tp TokenProvider) *UserService {
+func NewUserService(ur UserRepository, pm PasswordManager, tp TokenProvider) Provider {
 	return &UserService{
 		userRepository:  ur,
 		passwordManager: pm,

@@ -10,17 +10,17 @@ import (
 
 type UserHandler struct {
 	proto.UnimplementedUserServiceServer
-	userService *user.UserService
+	userProvider user.Provider
 }
 
-func NewUserHandler(us *user.UserService) *UserHandler {
+func NewUserHandler(up user.Provider) *UserHandler {
 	return &UserHandler{
-		userService: us,
+		userProvider: up,
 	}
 }
 
 func (uh *UserHandler) Login(c context.Context, req *proto.LoginRequest) (*proto.AuthResponse, error) {
-	response, err := uh.userService.Login(c, req.PhoneNumber, req.Password)
+	response, err := uh.userProvider.Login(c, req.PhoneNumber, req.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (uh *UserHandler) Login(c context.Context, req *proto.LoginRequest) (*proto
 }
 
 func (uh *UserHandler) Logout(c context.Context, req *proto.LogoutRequset) (*emptypb.Empty, error) {
-	if err := uh.userService.Logout(c, req.Token); err != nil {
+	if err := uh.userProvider.Logout(c, req.Token); err != nil {
 		return nil, err
 	}
 
@@ -41,7 +41,7 @@ func (uh *UserHandler) Logout(c context.Context, req *proto.LogoutRequset) (*emp
 }
 
 func (uh *UserHandler) RegisterUser(c context.Context, req *proto.RegisterRequest) (*proto.AuthResponse, error) {
-	response, err := uh.userService.RegisterUser(c, req.Name, req.PhoneNumber, req.Password)
+	response, err := uh.userProvider.RegisterUser(c, req.Name, req.PhoneNumber, req.Password)
 	if err != nil {
 		return nil, err
 	}
