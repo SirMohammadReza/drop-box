@@ -10,20 +10,20 @@ type UserRepository interface {
 	FindByPhoneNumber(c context.Context, phoneNumber string) (*User, error)
 }
 
-type TokenServiceNeed interface {
+type TokenProvider interface {
 	GenerateTokenPair(c context.Context, userID uint) (string, string, error)
 	DeleteToken(c context.Context, token string) error
 }
 
-type PasswordManagerNeed interface {
+type PasswordManager interface {
 	HashPassword(password string) (string, error)
 	CheckHash(password, hashValue string) bool
 }
 
 type UserService struct {
-	userRepository      UserRepository
-	passwordManagerNeed PasswordManagerNeed
-	tokenNeed           TokenServiceNeed
+	userRepository  UserRepository
+	passwordManager PasswordManager
+	tokenProvider   TokenProvider
 }
 
 type AuthResponse struct {
@@ -32,16 +32,16 @@ type AuthResponse struct {
 	Name         string `json:"name"`
 }
 
-func NewUserService(ur UserRepository, pmn PasswordManagerNeed, tn TokenServiceNeed) *UserService {
+func NewUserService(ur UserRepository, pm PasswordManager, tp TokenProvider) *UserService {
 	return &UserService{
-		userRepository:      ur,
-		passwordManagerNeed: pmn,
-		tokenNeed:           tn,
+		userRepository:  ur,
+		passwordManager: pm,
+		tokenProvider:   tp,
 	}
 }
 
 func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, password string) (*AuthResponse, error) {
-	hashPassword, err := us.passwordManagerNeed.HashPassword(password)
+	hashPassword, err := us.passwordManager.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, passwo
 		return nil, err
 	}
 
-	accessToken, refreshToken, err := us.tokenNeed.GenerateTokenPair(c, user.ID)
+	accessToken, refreshToken, err := us.tokenProvider.GenerateTokenPair(c, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,12 +85,12 @@ func (us *UserService) Login(c context.Context, phoneNumber, password string) (*
 		return nil, err
 	}
 
-	valid := us.passwordManagerNeed.CheckHash(password, user.Password)
+	valid := us.passwordManager.CheckHash(password, user.Password)
 	if !valid {
 		return nil, errors.New("Incorrect password")
 	}
 
-	accessToken, refreshToken, err := us.tokenNeed.GenerateTokenPair(c, user.ID)
+	accessToken, refreshToken, err := us.tokenProvider.GenerateTokenPair(c, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,5 +103,5 @@ func (us *UserService) Login(c context.Context, phoneNumber, password string) (*
 }
 
 func (us *UserService) Logout(c context.Context, token string) error {
-	return us.tokenNeed.DeleteToken(c, token)
+	return us.tokenProvider.DeleteToken(c, token)
 }

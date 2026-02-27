@@ -31,10 +31,10 @@ func main() {
 
 	pm := encryption.NewEncryptionService()
 
-	tr := token.NewPostgresRepository(postgresDB)
+	tr := token.NewRepository(postgresDB)
 	ts := token.NewTokenService(tr)
 
-	ur := user.NewPostgresRepository(postgresDB)
+	ur := user.NewRepository(postgresDB)
 	us := user.NewUserService(ur, pm, ts)
 
 	userHandler := grpcHandlers.NewUserHandler(us)

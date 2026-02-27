@@ -6,18 +6,18 @@ import (
 	"gorm.io/gorm"
 )
 
-type PostgresRepository struct {
+type Repository struct {
 	db *gorm.DB
 }
 
-func NewPostgresRepository(db *gorm.DB) *PostgresRepository {
-	return &PostgresRepository{
+func NewRepository(db *gorm.DB) *Repository {
+	return &Repository{
 		db: db,
 	}
 }
 
-func (pr *PostgresRepository) Create(c context.Context, user *User) (*User, error) {
-	res := pr.db.WithContext(c).Create(user)
+func (r *Repository) Create(c context.Context, user *User) (*User, error) {
+	res := r.db.WithContext(c).Create(user)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -25,9 +25,9 @@ func (pr *PostgresRepository) Create(c context.Context, user *User) (*User, erro
 	return user, nil
 }
 
-func (pr *PostgresRepository) FindByPhoneNumber(c context.Context, phoneNumber string) (*User, error) {
+func (r *Repository) FindByPhoneNumber(c context.Context, phoneNumber string) (*User, error) {
 	var user User
-	res := pr.db.Where("phone_number = ?", phoneNumber).Find(&user)
+	res := r.db.Where("phone_number = ?", phoneNumber).Find(&user)
 	if res.Error != nil {
 		return nil, res.Error
 	}
