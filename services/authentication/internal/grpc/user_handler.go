@@ -29,6 +29,7 @@ func (uh *UserHandler) Login(c context.Context, req *proto.LoginRequest) (*proto
 		RefreshToken: response.RefreshToken,
 		AccessToken:  response.AccessToken,
 		Name:         response.Name,
+		Uuid:         response.Uuid.String(),
 	}, nil
 }
 
@@ -50,5 +51,6 @@ func (uh *UserHandler) RegisterUser(c context.Context, req *proto.RegisterReques
 		RefreshToken: response.RefreshToken,
 		AccessToken:  response.AccessToken,
 		Name:         response.Name,
+		Uuid:         response.Uuid.String(),
 	}, nil
 }

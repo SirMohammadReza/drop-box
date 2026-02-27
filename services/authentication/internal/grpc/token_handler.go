@@ -21,13 +21,14 @@ func NewTokenHandler(tp token.Provider) *TokenHandler {
 }
 
 func (th *TokenHandler) IsTokenValid(c context.Context, req *proto.CheckTokenRequest) (*proto.CheckTokenResponse, error) {
-	_, err := th.tokenProvider.ValidateToken(c, req.Token, token.TokenAccessType)
+	uuid, err := th.tokenProvider.ValidateToken(c, req.Token, token.TokenAccessType)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "could not validate access token")
 	}
 
 	return &proto.CheckTokenResponse{
 		Valid: true,
+		Uuid:  uuid.String(),
 	}, nil
 }
 

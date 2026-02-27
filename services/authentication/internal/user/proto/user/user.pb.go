@@ -139,6 +139,7 @@ type AuthResponse struct {
 	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
 	AccessToken   string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Uuid          string                 `protobuf:"bytes,4,opt,name=uuid,proto3" json:"uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -190,6 +191,13 @@ func (x *AuthResponse) GetAccessToken() string {
 func (x *AuthResponse) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *AuthResponse) GetUuid() string {
+	if x != nil {
+		return x.Uuid
 	}
 	return ""
 }
@@ -249,11 +257,12 @@ const file_proto_user_user_proto_rawDesc = "" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\"M\n" +
 	"\fLoginRequest\x12!\n" +
 	"\fphone_number\x18\x01 \x01(\tR\vphoneNumber\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"j\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"~\n" +
 	"\fAuthResponse\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\x12!\n" +
 	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\"%\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
+	"\x04uuid\x18\x04 \x01(\tR\x04uuid\"%\n" +
 	"\rLogoutRequset\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token2\xb0\x01\n" +
 	"\vUserService\x129\n" +

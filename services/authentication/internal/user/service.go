@@ -3,6 +3,8 @@ package user
 import (
 	"context"
 	"errors"
+
+	"github.com/google/uuid"
 )
 
 type Provider interface {
@@ -18,7 +20,7 @@ type UserRepository interface {
 }
 
 type TokenProvider interface {
-	GenerateTokenPair(c context.Context, userID uint) (string, string, error)
+	GenerateTokenPair(c context.Context, userID uint, uuid uuid.UUID) (string, string, error)
 	DeleteToken(c context.Context, token string) error
 }
 
@@ -34,9 +36,10 @@ type UserService struct {
 }
 
 type AuthResponse struct {
-	AccessToken  string `json:"token"`
-	RefreshToken string `json:"refresh_token"`
-	Name         string `json:"name"`
+	AccessToken  string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
+	Name         string    `json:"name"`
+	Uuid         uuid.UUID `json:"uuid"`
 }
 
 func NewUserService(ur UserRepository, pm PasswordManager, tp TokenProvider) Provider {
@@ -52,9 +55,10 @@ func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, passwo
 	if err != nil {
 		return nil, err
 	}
-
+	newUuid := uuid.New()
 	newUser := User{
 		Name:        name,
+		Uuid:        newUuid,
 		PhoneNumber: phoneNumber,
 		Password:    hashPassword,
 	}
@@ -65,7 +69,7 @@ func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, passwo
 		return nil, err
 	}
 
-	accessToken, refreshToken, err := us.tokenProvider.GenerateTokenPair(c, user.ID)
+	accessToken, refreshToken, err := us.tokenProvider.GenerateTokenPair(c, user.ID, newUuid)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +78,7 @@ func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, passwo
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		Name:         user.Name,
+		Uuid:         newUuid,
 	}, nil
 }
 
@@ -97,7 +102,7 @@ func (us *UserService) Login(c context.Context, phoneNumber, password string) (*
 		return nil, errors.New("Incorrect password")
 	}
 
-	accessToken, refreshToken, err := us.tokenProvider.GenerateTokenPair(c, user.ID)
+	accessToken, refreshToken, err := us.tokenProvider.GenerateTokenPair(c, user.ID, user.Uuid)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +111,7 @@ func (us *UserService) Login(c context.Context, phoneNumber, password string) (*
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		Name:         user.Name,
+		Uuid:         user.Uuid,
 	}, nil
 }
 

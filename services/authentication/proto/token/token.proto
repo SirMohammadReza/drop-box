@@ -9,7 +9,8 @@ message CheckTokenRequest {
 }
 
 message CheckTokenResponse{
-  bool valid = 1;
+  bool   valid = 1;
+  string uuid  = 2;
 }
 
 message RefreshRequest{
@@ -23,7 +24,7 @@ message RefreshResponse{
 
 // token service
 service TokenService {
-    // Check token
+  // Check token
   rpc IsTokenValid (CheckTokenRequest) returns (CheckTokenResponse);
   // Refresh token
   rpc Refresh (RefreshRequest) returns (RefreshResponse);

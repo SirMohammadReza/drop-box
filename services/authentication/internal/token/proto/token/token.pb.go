@@ -68,6 +68,7 @@ func (x *CheckTokenRequest) GetToken() string {
 type CheckTokenResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Valid         bool                   `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+	Uuid          string                 `protobuf:"bytes,2,opt,name=uuid,proto3" json:"uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -107,6 +108,13 @@ func (x *CheckTokenResponse) GetValid() bool {
 		return x.Valid
 	}
 	return false
+}
+
+func (x *CheckTokenResponse) GetUuid() string {
+	if x != nil {
+		return x.Uuid
+	}
+	return ""
 }
 
 type RefreshRequest struct {
@@ -211,9 +219,10 @@ const file_proto_token_token_proto_rawDesc = "" +
 	"\n" +
 	"\x17proto/token/token.proto\x12\x05token\")\n" +
 	"\x11CheckTokenRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"*\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\">\n" +
 	"\x12CheckTokenResponse\x12\x14\n" +
-	"\x05valid\x18\x01 \x01(\bR\x05valid\"5\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\x12\x12\n" +
+	"\x04uuid\x18\x02 \x01(\tR\x04uuid\"5\n" +
 	"\x0eRefreshRequest\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"W\n" +
 	"\x0fRefreshResponse\x12\x1f\n" +

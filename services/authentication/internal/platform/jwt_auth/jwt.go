@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 var (
@@ -13,13 +14,13 @@ var (
 )
 
 type Claims struct {
-	UserID uint `json:"user_id"`
+	Uuid uuid.UUID `json:"uuid"`
 	jwt.RegisteredClaims
 }
 
-func generateToken(userID uint, secret []byte, expireAt time.Duration) (string, error) {
+func generateToken(uuid uuid.UUID, secret []byte, expireAt time.Duration) (string, error) {
 	claims := &Claims{
-		UserID: userID,
+		Uuid: uuid,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expireAt)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -31,13 +32,13 @@ func generateToken(userID uint, secret []byte, expireAt time.Duration) (string, 
 	return token.SignedString(secret)
 }
 
-func GenerateTokenPair(userID uint) (string, string, error) {
-	accessToken, err := generateToken(userID, accessSecret, time.Hour)
+func GenerateTokenPair(uuid uuid.UUID) (string, string, error) {
+	accessToken, err := generateToken(uuid, accessSecret, time.Hour)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := generateToken(userID, refreshSecret, 7*24*time.Hour)
+	refreshToken, err := generateToken(uuid, refreshSecret, 7*24*time.Hour)
 	if err != nil {
 		return "", "", err
 	}
@@ -62,7 +63,7 @@ func ValidateRefreshToken(tokenString string) (*Claims, error) {
 
 func ValidateAccessToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (any, error) {
-		return refreshSecret, nil
+		return accessSecret, nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not parse token with claims: %w", err)

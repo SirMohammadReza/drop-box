@@ -4,6 +4,8 @@ import (
 	jwtauth "authentication/internal/platform/jwt_auth"
 	"context"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type TokenType int
@@ -25,8 +27,8 @@ const (
 )
 
 type Provider interface {
-	GenerateTokenPair(c context.Context, userID uint) (string, string, error)
-	ValidateToken(c context.Context, token string, tokenType TokenType) (*uint, error)
+	GenerateTokenPair(c context.Context, userID uint, uuid uuid.UUID) (string, string, error)
+	ValidateToken(c context.Context, token string, tokenType TokenType) (*uuid.UUID, error)
 	DeleteToken(c context.Context, token string) error
 	RefreshTokens(c context.Context, refreshToken string) (string, string, error)
 }
@@ -46,8 +48,8 @@ func NewTokenService(tr TokenRepository) Provider {
 	}
 }
 
-func (ts *TokenService) GenerateTokenPair(c context.Context, userID uint) (string, string, error) {
-	token, refreshToken, err := jwtauth.GenerateTokenPair(userID)
+func (ts *TokenService) GenerateTokenPair(c context.Context, userID uint, uuid uuid.UUID) (string, string, error) {
+	token, refreshToken, err := jwtauth.GenerateTokenPair(uuid)
 	if err != nil {
 		return "", "", fmt.Errorf("could not generate tokens: %w", err)
 	}
@@ -63,14 +65,14 @@ func (ts *TokenService) GenerateTokenPair(c context.Context, userID uint) (strin
 	return token, refreshToken, nil
 }
 
-func (ts *TokenService) ValidateToken(c context.Context, token string, tokenType TokenType) (*uint, error) {
+func (ts *TokenService) ValidateToken(c context.Context, token string, tokenType TokenType) (*uuid.UUID, error) {
 	if tokenType == TokenAccessType {
 		claims, err := jwtauth.ValidateAccessToken(token)
 		if err != nil {
 			return nil, fmt.Errorf("could not validate access token: %w", err)
 		}
 
-		return &claims.UserID, nil
+		return &claims.Uuid, nil
 	}
 
 	if tokenType == TokenRefreshType {
@@ -79,7 +81,7 @@ func (ts *TokenService) ValidateToken(c context.Context, token string, tokenType
 			return nil, fmt.Errorf("could not validate refresh token: %w", err)
 		}
 
-		return &claims.UserID, nil
+		return &claims.Uuid, nil
 	}
 
 	return nil, fmt.Errorf("could not validate token, invalid token type: %s", tokenType)
@@ -90,7 +92,7 @@ func (ts *TokenService) DeleteToken(c context.Context, token string) error {
 }
 
 func (ts *TokenService) RefreshTokens(c context.Context, refreshToken string) (string, string, error) {
-	userID, err := ts.ValidateToken(c, refreshToken, TokenRefreshType)
+	uuid, err := ts.ValidateToken(c, refreshToken, TokenRefreshType)
 	if err != nil {
 		return "", "", fmt.Errorf("could not validate refresh token: %w", err)
 	}
@@ -100,7 +102,7 @@ func (ts *TokenService) RefreshTokens(c context.Context, refreshToken string) (s
 		return "", "", fmt.Errorf("could not delete refresh token: %w", err)
 	}
 
-	acsToken, refToken, err := ts.GenerateTokenPair(c, *userID)
+	acsToken, refToken, err := jwtauth.GenerateTokenPair(*uuid)
 	if err != nil {
 		return "", "", fmt.Errorf("could not generate access and refresh tokens: %w", err)
 	}

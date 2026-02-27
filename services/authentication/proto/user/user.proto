@@ -21,6 +21,7 @@ message AuthResponse {
   string refresh_token = 1;
   string access_token  = 2;
   string name          = 3;
+  string uuid          = 4;
 }
 
 message LogoutRequset {
