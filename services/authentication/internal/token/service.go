@@ -40,7 +40,7 @@ type TokenService struct {
 	tokenRepository TokenRepository
 }
 
-func NewTokenService(tr TokenRepository) *TokenService {
+func NewTokenService(tr TokenRepository) Provider {
 	return &TokenService{
 		tokenRepository: tr,
 	}
