@@ -2,7 +2,7 @@ package token
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -17,28 +17,26 @@ func NewPostgresRepository(db *gorm.DB) *PostgresRepository {
 	}
 }
 
-func (pr *PostgresRepository) StoreRefreshToken(c context.Context, userID uint, token string) error {
-	t := Token{
-		UserID: userID,
-		Token:  token,
+func (pr *PostgresRepository) StoreRefreshToken(c context.Context, token *Token) error {
+	res := pr.db.WithContext(c).Create(&token)
+	if res.Error != nil {
+		return fmt.Errorf("Cound not store token: %w", res.Error)
 	}
 
-	return pr.db.WithContext(c).Create(&t).Error
+	return nil
 }
 
-func (pr *PostgresRepository) IsTokenExists(c context.Context, token string) bool {
-	err := pr.db.WithContext(c).First(&Token{}, "token = ?", token).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return false
+func (pr *PostgresRepository) GetToken(c context.Context, userID uint, token string) (*Token, error) {
+	var t Token
+
+	res := pr.db.WithContext(c).Where("user_id = ?", userID).Where("token = ?", token).First(&t)
+	if res.Error != nil {
+		return nil, fmt.Errorf("Token not found: %w", res.Error)
 	}
 
-	return true
+	return &t, nil
 }
 
 func (pr *PostgresRepository) RevokeToken(c context.Context, token string) error {
 	return pr.db.WithContext(c).Unscoped().Where("token = ?", token).Delete(&Token{}).Error
-}
-
-func (pr *PostgresRepository) RevokeTokenByUserID(c context.Context, userID uint) error {
-	return pr.db.WithContext(c).Unscoped().Where("user_id = ?", userID).Delete(&Token{}).Error
 }

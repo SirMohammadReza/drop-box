@@ -1,24 +1,32 @@
 package token
 
 import (
+	jwtauth "authentication/internal/platform/jwt_auth"
 	"context"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
+	"fmt"
 )
 
-var jwtSecret []byte = []byte("3d86f180105efab801fc9178d569dbf1")
+type TokenType int
 
-type TokenRepository interface {
-	StoreRefreshToken(c context.Context, userID uint, token string) error
-	RevokeToken(c context.Context, token string) error
-	RevokeTokenByUserID(c context.Context, userID uint) error
-	IsTokenExists(c context.Context, token string) bool
+func (t TokenType) String() string {
+	switch t {
+	case 1:
+		return "Access Token Type"
+	case 2:
+		return "Refresh Token Type"
+	default:
+		return "Invalid Token Type"
+	}
 }
 
-type Claims struct {
-	UserID uint `json:"user_id"`
-	jwt.RegisteredClaims
+const (
+	TokenAccessType  = TokenType(1)
+	TokenRefreshType = TokenType(2)
+)
+
+type TokenRepository interface {
+	StoreRefreshToken(c context.Context, token *Token) error
+	RevokeToken(c context.Context, token string) error
 }
 
 type TokenService struct {
@@ -32,54 +40,44 @@ func NewTokenService(tr TokenRepository) *TokenService {
 }
 
 func (ts *TokenService) GenerateTokenPair(c context.Context, userID uint) (string, string, error) {
-	access, err := ts.generateJWT(userID, 60*time.Minute)
+	token, refreshToken, err := jwtauth.GenerateTokenPair(userID)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("could not generate tokens: %w", err)
 	}
 
-	refresh, err := ts.generateJWT(userID, 24*7*time.Hour)
-	if err != nil {
-		return "", "", err
-	}
-
-	err = ts.tokenRepository.StoreRefreshToken(c, userID, refresh)
-	if err != nil {
-		return "", "", err
-	}
-
-	return access, refresh, nil
-}
-
-func (ts *TokenService) generateJWT(userID uint, expiry time.Duration) (string, error) {
-	claims := &Claims{
+	err = ts.tokenRepository.StoreRefreshToken(c, &Token{
 		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiry)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
+		Token:  refreshToken,
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("could not store resfresh token: %w", err)
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token, refreshToken, nil
 }
 
-func (ts *TokenService) IsTokenValid(c context.Context, token string) bool {
-	// Check for stateless
-	// t, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (any, error) {
-	// 	if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-	// 		return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-	// 	}
+func (ts *TokenService) ValidateToken(c context.Context, token string, tokenType TokenType) (*uint, error) {
+	if tokenType == TokenAccessType {
+		claims, err := jwtauth.ValidateAccessToken(token)
+		if err != nil {
+			return nil, fmt.Errorf("could not validate access token: %w", err)
+		}
 
-	// 	return jwtSecret, nil
-	// })
+		return &claims.UserID, nil
+	}
 
-	return ts.tokenRepository.IsTokenExists(c, token)
+	if tokenType == TokenRefreshType {
+		claims, err := jwtauth.ValidateRefreshToken(token)
+		if err != nil {
+			return nil, fmt.Errorf("could not validate refresh token: %w", err)
+		}
+
+		return &claims.UserID, nil
+	}
+
+	return nil, fmt.Errorf("could not validate token, invalid token type: %s", tokenType)
 }
 
 func (ts *TokenService) DeleteToken(c context.Context, token string) error {
 	return ts.tokenRepository.RevokeToken(c, token)
-}
-
-func (ts *TokenService) DeleteAllSessions(c context.Context, userID uint) error {
-	return ts.tokenRepository.RevokeTokenByUserID(c, userID)
 }
