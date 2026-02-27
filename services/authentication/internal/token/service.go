@@ -24,6 +24,13 @@ const (
 	TokenRefreshType = TokenType(2)
 )
 
+type Provider interface {
+	GenerateTokenPair(c context.Context, userID uint) (string, string, error)
+	ValidateToken(c context.Context, token string, tokenType TokenType) (*uint, error)
+	DeleteToken(c context.Context, token string) error
+	RefreshTokens(c context.Context, refreshToken string) (string, string, error)
+}
+
 type TokenRepository interface {
 	StoreRefreshToken(c context.Context, token *Token) error
 	RevokeToken(c context.Context, token string) error

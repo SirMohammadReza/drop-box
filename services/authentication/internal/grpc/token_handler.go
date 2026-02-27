@@ -11,17 +11,17 @@ import (
 
 type TokenHandler struct {
 	proto.UnimplementedTokenServiceServer
-	tokenService *token.TokenService
+	tokenProvider token.Provider
 }
 
-func NewTokenHandler(ts *token.TokenService) *TokenHandler {
+func NewTokenHandler(tp token.Provider) *TokenHandler {
 	return &TokenHandler{
-		tokenService: ts,
+		tokenProvider: tp,
 	}
 }
 
 func (th *TokenHandler) IsTokenValid(c context.Context, req *proto.CheckTokenRequest) (*proto.CheckTokenResponse, error) {
-	_, err := th.tokenService.ValidateToken(c, req.Token, token.TokenAccessType)
+	_, err := th.tokenProvider.ValidateToken(c, req.Token, token.TokenAccessType)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "could not validate access token")
 	}
@@ -32,7 +32,7 @@ func (th *TokenHandler) IsTokenValid(c context.Context, req *proto.CheckTokenReq
 }
 
 func (th *TokenHandler) Refresh(c context.Context, req *proto.RefreshRequest) (*proto.RefreshResponse, error) {
-	accessToken, refreshToken, err := th.tokenService.RefreshTokens(c, req.RefreshToken)
+	accessToken, refreshToken, err := th.tokenProvider.RefreshTokens(c, req.RefreshToken)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "could not refresh token")
 	}
