@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	TokenService_IsTokenValid_FullMethodName = "/token.TokenService/IsTokenValid"
+	TokenService_Refresh_FullMethodName      = "/token.TokenService/Refresh"
 )
 
 // TokenServiceClient is the client API for TokenService service.
@@ -30,6 +31,8 @@ const (
 type TokenServiceClient interface {
 	// Check token
 	IsTokenValid(ctx context.Context, in *CheckTokenRequest, opts ...grpc.CallOption) (*CheckTokenResponse, error)
+	// Refresh token
+	Refresh(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*RefreshResponse, error)
 }
 
 type tokenServiceClient struct {
@@ -50,6 +53,16 @@ func (c *tokenServiceClient) IsTokenValid(ctx context.Context, in *CheckTokenReq
 	return out, nil
 }
 
+func (c *tokenServiceClient) Refresh(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*RefreshResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RefreshResponse)
+	err := c.cc.Invoke(ctx, TokenService_Refresh_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TokenServiceServer is the server API for TokenService service.
 // All implementations must embed UnimplementedTokenServiceServer
 // for forward compatibility.
@@ -58,6 +71,8 @@ func (c *tokenServiceClient) IsTokenValid(ctx context.Context, in *CheckTokenReq
 type TokenServiceServer interface {
 	// Check token
 	IsTokenValid(context.Context, *CheckTokenRequest) (*CheckTokenResponse, error)
+	// Refresh token
+	Refresh(context.Context, *RefreshRequest) (*RefreshResponse, error)
 	mustEmbedUnimplementedTokenServiceServer()
 }
 
@@ -70,6 +85,9 @@ type UnimplementedTokenServiceServer struct{}
 
 func (UnimplementedTokenServiceServer) IsTokenValid(context.Context, *CheckTokenRequest) (*CheckTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method IsTokenValid not implemented")
+}
+func (UnimplementedTokenServiceServer) Refresh(context.Context, *RefreshRequest) (*RefreshResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Refresh not implemented")
 }
 func (UnimplementedTokenServiceServer) mustEmbedUnimplementedTokenServiceServer() {}
 func (UnimplementedTokenServiceServer) testEmbeddedByValue()                      {}
@@ -110,6 +128,24 @@ func _TokenService_IsTokenValid_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TokenService_Refresh_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TokenServiceServer).Refresh(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TokenService_Refresh_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TokenServiceServer).Refresh(ctx, req.(*RefreshRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TokenService_ServiceDesc is the grpc.ServiceDesc for TokenService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -120,6 +156,10 @@ var TokenService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsTokenValid",
 			Handler:    _TokenService_IsTokenValid_Handler,
+		},
+		{
+			MethodName: "Refresh",
+			Handler:    _TokenService_Refresh_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

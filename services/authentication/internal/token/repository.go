@@ -38,5 +38,11 @@ func (pr *PostgresRepository) GetToken(c context.Context, userID uint, token str
 }
 
 func (pr *PostgresRepository) RevokeToken(c context.Context, token string) error {
-	return pr.db.WithContext(c).Unscoped().Where("token = ?", token).Delete(&Token{}).Error
+	var t Token
+	res := pr.db.WithContext(c).Unscoped().Where("token = ?", token).First(&t).Delete(&t)
+	if res.Error != nil {
+		return fmt.Errorf("could nod delete refresh token: %w", res.Error)
+	}
+
+	return nil
 }

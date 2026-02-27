@@ -81,3 +81,22 @@ func (ts *TokenService) ValidateToken(c context.Context, token string, tokenType
 func (ts *TokenService) DeleteToken(c context.Context, token string) error {
 	return ts.tokenRepository.RevokeToken(c, token)
 }
+
+func (ts *TokenService) RefreshTokens(c context.Context, refreshToken string) (string, string, error) {
+	userID, err := ts.ValidateToken(c, refreshToken, TokenRefreshType)
+	if err != nil {
+		return "", "", fmt.Errorf("could not validate refresh token: %w", err)
+	}
+
+	err = ts.DeleteToken(c, refreshToken)
+	if err != nil {
+		return "", "", fmt.Errorf("could not delete refresh token: %w", err)
+	}
+
+	acsToken, refToken, err := ts.GenerateTokenPair(c, *userID)
+	if err != nil {
+		return "", "", fmt.Errorf("could not generate access and refresh tokens: %w", err)
+	}
+
+	return acsToken, refToken, nil
+}

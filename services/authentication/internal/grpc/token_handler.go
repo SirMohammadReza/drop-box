@@ -30,3 +30,15 @@ func (th *TokenHandler) IsTokenValid(c context.Context, req *proto.CheckTokenReq
 		Valid: true,
 	}, nil
 }
+
+func (th *TokenHandler) Refresh(c context.Context, req *proto.RefreshRequest) (*proto.RefreshResponse, error) {
+	accessToken, refreshToken, err := th.tokenService.RefreshTokens(c, req.RefreshToken)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "could not refresh token")
+	}
+
+	return &proto.RefreshResponse{
+		AcessToken:   accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}

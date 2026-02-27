@@ -109,6 +109,102 @@ func (x *CheckTokenResponse) GetValid() bool {
 	return false
 }
 
+type RefreshRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefreshRequest) Reset() {
+	*x = RefreshRequest{}
+	mi := &file_proto_token_token_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefreshRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefreshRequest) ProtoMessage() {}
+
+func (x *RefreshRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_token_token_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefreshRequest.ProtoReflect.Descriptor instead.
+func (*RefreshRequest) Descriptor() ([]byte, []int) {
+	return file_proto_token_token_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RefreshRequest) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+type RefreshResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AcessToken    string                 `protobuf:"bytes,1,opt,name=acess_token,json=acessToken,proto3" json:"acess_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefreshResponse) Reset() {
+	*x = RefreshResponse{}
+	mi := &file_proto_token_token_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefreshResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefreshResponse) ProtoMessage() {}
+
+func (x *RefreshResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_token_token_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefreshResponse.ProtoReflect.Descriptor instead.
+func (*RefreshResponse) Descriptor() ([]byte, []int) {
+	return file_proto_token_token_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *RefreshResponse) GetAcessToken() string {
+	if x != nil {
+		return x.AcessToken
+	}
+	return ""
+}
+
+func (x *RefreshResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
 var File_proto_token_token_proto protoreflect.FileDescriptor
 
 const file_proto_token_token_proto_rawDesc = "" +
@@ -117,9 +213,16 @@ const file_proto_token_token_proto_rawDesc = "" +
 	"\x11CheckTokenRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"*\n" +
 	"\x12CheckTokenResponse\x12\x14\n" +
-	"\x05valid\x18\x01 \x01(\bR\x05valid2S\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\"5\n" +
+	"\x0eRefreshRequest\x12#\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"W\n" +
+	"\x0fRefreshResponse\x12\x1f\n" +
+	"\vacess_token\x18\x01 \x01(\tR\n" +
+	"acessToken\x12#\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken2\x8d\x01\n" +
 	"\fTokenService\x12C\n" +
-	"\fIsTokenValid\x12\x18.token.CheckTokenRequest\x1a\x19.token.CheckTokenResponseB\x18Z\x16./internal/token/protob\x06proto3"
+	"\fIsTokenValid\x12\x18.token.CheckTokenRequest\x1a\x19.token.CheckTokenResponse\x128\n" +
+	"\aRefresh\x12\x15.token.RefreshRequest\x1a\x16.token.RefreshResponseB\x18Z\x16./internal/token/protob\x06proto3"
 
 var (
 	file_proto_token_token_proto_rawDescOnce sync.Once
@@ -133,16 +236,20 @@ func file_proto_token_token_proto_rawDescGZIP() []byte {
 	return file_proto_token_token_proto_rawDescData
 }
 
-var file_proto_token_token_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_token_token_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_token_token_proto_goTypes = []any{
 	(*CheckTokenRequest)(nil),  // 0: token.CheckTokenRequest
 	(*CheckTokenResponse)(nil), // 1: token.CheckTokenResponse
+	(*RefreshRequest)(nil),     // 2: token.RefreshRequest
+	(*RefreshResponse)(nil),    // 3: token.RefreshResponse
 }
 var file_proto_token_token_proto_depIdxs = []int32{
 	0, // 0: token.TokenService.IsTokenValid:input_type -> token.CheckTokenRequest
-	1, // 1: token.TokenService.IsTokenValid:output_type -> token.CheckTokenResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 1: token.TokenService.Refresh:input_type -> token.RefreshRequest
+	1, // 2: token.TokenService.IsTokenValid:output_type -> token.CheckTokenResponse
+	3, // 3: token.TokenService.Refresh:output_type -> token.RefreshResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -159,7 +266,7 @@ func file_proto_token_token_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_token_token_proto_rawDesc), len(file_proto_token_token_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
