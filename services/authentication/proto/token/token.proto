@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package token;
 
-option go_package = "./internal/token/proto";
+option go_package = "github.com/SirMohammadReza/drop-box/services/authentication/proto/token";
 
 message CheckTokenRequest {
   string token = 1;

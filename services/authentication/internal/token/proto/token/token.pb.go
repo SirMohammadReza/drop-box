@@ -4,7 +4,7 @@
 // 	protoc        v6.33.4
 // source: proto/token/token.proto
 
-package proto
+package token
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -231,7 +231,7 @@ const file_proto_token_token_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken2\x8d\x01\n" +
 	"\fTokenService\x12C\n" +
 	"\fIsTokenValid\x12\x18.token.CheckTokenRequest\x1a\x19.token.CheckTokenResponse\x128\n" +
-	"\aRefresh\x12\x15.token.RefreshRequest\x1a\x16.token.RefreshResponseB\x18Z\x16./internal/token/protob\x06proto3"
+	"\aRefresh\x12\x15.token.RefreshRequest\x1a\x16.token.RefreshResponseBIZGgithub.com/SirMohammadReza/drop-box/services/authentication/proto/tokenb\x06proto3"
 
 var (
 	file_proto_token_token_proto_rawDescOnce sync.Once

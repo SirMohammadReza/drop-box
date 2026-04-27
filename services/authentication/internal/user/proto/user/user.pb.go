@@ -4,7 +4,7 @@
 // 	protoc        v6.33.4
 // source: proto/user/user.proto
 
-package proto
+package user
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -268,7 +268,7 @@ const file_proto_user_user_proto_rawDesc = "" +
 	"\vUserService\x129\n" +
 	"\fRegisterUser\x12\x15.user.RegisterRequest\x1a\x12.user.AuthResponse\x12/\n" +
 	"\x05Login\x12\x12.user.LoginRequest\x1a\x12.user.AuthResponse\x125\n" +
-	"\x06Logout\x12\x13.user.LogoutRequset\x1a\x16.google.protobuf.EmptyB\x17Z\x15./internal/user/protob\x06proto3"
+	"\x06Logout\x12\x13.user.LogoutRequset\x1a\x16.google.protobuf.EmptyBHZFgithub.com/SirMohammadReza/drop-box/services/authentication/proto/userb\x06proto3"
 
 var (
 	file_proto_user_user_proto_rawDescOnce sync.Once
