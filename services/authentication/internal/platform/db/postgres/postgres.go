@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"authentication/internal/config"
+	"fmt"
 	"log"
 	"sync"
 
@@ -15,7 +17,7 @@ var (
 
 func GetDB() *gorm.DB {
 	once.Do(func() {
-		dsn := "host=localhost user=postgres password=postgres dbname=auth port=5432 sslmode=disable"
+		dsn := getDsn()
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
 			log.Fatalf("Could not create database: %s", err.Error())
@@ -24,4 +26,8 @@ func GetDB() *gorm.DB {
 	})
 
 	return _db
+}
+
+func getDsn() string {
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", config.Config("PG_HOST"), config.Config("PG_USER"), config.Config("PG_PASSWORD"), config.Config("PG_DBNAME"), config.Config("PG_PORT"), config.Config("PG_SSLMODE"))
 }

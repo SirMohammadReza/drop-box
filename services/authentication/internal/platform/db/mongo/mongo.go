@@ -1,7 +1,9 @@
 package mongo
 
 import (
+	"authentication/internal/config"
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -17,7 +19,7 @@ var (
 
 func ConnetMongo() *mongo.Client {
 	once.Do(func() {
-		uri := "mongodb://admin:4321@localhost:27017"
+		uri := getUri()
 
 		clientOption := options.Client().ApplyURI(uri)
 
@@ -38,4 +40,8 @@ func ConnetMongo() *mongo.Client {
 	})
 
 	return mongoClient
+}
+
+func getUri() string {
+	return fmt.Sprintf("mongodb://%s:%s@%s:%s", config.Config("MONGO_USERNAME"), config.Config("MONGO_PASSWORD"), config.Config("MONGO_HOST"), config.Config("MONGO_PORT"))
 }
