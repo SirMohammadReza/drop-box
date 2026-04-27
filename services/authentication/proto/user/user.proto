@@ -4,7 +4,7 @@ import "google/protobuf/empty.proto";
 
 package user;
 
-option go_package = "github.com/SirMohammadReza/drop-box/services/authentication/proto/user";
+option go_package = "./internal/proto/user";
 
 message RegisterRequest {
   string name         = 1;
