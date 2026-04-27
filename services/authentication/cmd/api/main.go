@@ -2,8 +2,10 @@ package main
 
 import (
 	grpcHandlers "authentication/internal/grpc"
+	"authentication/internal/platform/db/mongo"
 	"authentication/internal/platform/db/postgres"
 	"authentication/internal/platform/encryption"
+	"authentication/internal/platform/logger"
 	"authentication/internal/token"
 	tokenProto "authentication/internal/token/proto/token"
 	"authentication/internal/user"
@@ -15,6 +17,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -27,15 +30,22 @@ func main() {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
+	l := logrus.New()
+	l.SetFormatter(&logrus.JSONFormatter{})
+	mc := mongo.ConnetMongo()
+	mh := logger.NewMongoHook(mc, "auth", "logs")
+	l.AddHook(mh)
+	al := logger.NewLogrusWrapper(l)
+
 	s := grpc.NewServer()
 
 	pm := encryption.NewEncryptionService()
 
 	tr := token.NewRepository(postgresDB)
-	ts := token.NewTokenService(tr)
+	ts := token.NewTokenService(tr, al)
 
 	ur := user.NewRepository(postgresDB)
-	us := user.NewUserService(ur, pm, ts)
+	us := user.NewUserService(ur, pm, ts, al)
 
 	userHandler := grpcHandlers.NewUserHandler(us)
 	userProto.RegisterUserServiceServer(s, userHandler)

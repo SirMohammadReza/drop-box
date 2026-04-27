@@ -1,6 +1,7 @@
 package user
 
 import (
+	"authentication/internal/platform/logger"
 	"context"
 	"errors"
 
@@ -33,6 +34,7 @@ type UserService struct {
 	userRepository  UserRepository
 	passwordManager PasswordManager
 	tokenProvider   TokenProvider
+	logger          logger.Logger
 }
 
 type AuthResponse struct {
@@ -42,17 +44,23 @@ type AuthResponse struct {
 	Uuid         uuid.UUID `json:"uuid"`
 }
 
-func NewUserService(ur UserRepository, pm PasswordManager, tp TokenProvider) Provider {
+func NewUserService(ur UserRepository, pm PasswordManager, tp TokenProvider, l logger.Logger) Provider {
 	return &UserService{
 		userRepository:  ur,
 		passwordManager: pm,
 		tokenProvider:   tp,
+		logger:          l,
 	}
 }
 
 func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, password string) (*AuthResponse, error) {
 	hashPassword, err := us.passwordManager.HashPassword(password)
 	if err != nil {
+		us.logger.WithField("func", "register user").
+			WithField("name", name).
+			WithField("phone_number", phoneNumber).
+			WithField("error", err).
+			Errorf("could not hash password", err.Error())
 		return nil, err
 	}
 	newUuid := uuid.New()
@@ -64,13 +72,22 @@ func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, passwo
 	}
 
 	user, err := us.userRepository.Create(c, &newUser)
-
 	if err != nil {
+		us.logger.WithField("func", "register user").
+			WithField("name", name).
+			WithField("phone_number", phoneNumber).
+			WithField("error", err).
+			Errorf("could not register user: %s", err.Error())
 		return nil, err
 	}
 
 	accessToken, refreshToken, err := us.tokenProvider.GenerateTokenPair(c, user.ID, newUuid)
 	if err != nil {
+		us.logger.WithField("func", "register user").
+			WithField("name", name).
+			WithField("phone_number", phoneNumber).
+			WithField("error", err).
+			Errorf("could not generate pair token: %s", err.Error())
 		return nil, err
 	}
 
@@ -85,6 +102,10 @@ func (us *UserService) RegisterUser(c context.Context, name, phoneNumber, passwo
 func (us *UserService) GetUserInfo(c context.Context, phoneNumber string) (*User, error) {
 	user, err := us.userRepository.FindByPhoneNumber(c, phoneNumber)
 	if err != nil {
+		us.logger.WithField("func", "get user info").
+			WithField("phone_number", phoneNumber).
+			WithField("error", err).
+			Errorf("could not find user by phone numbe: %s", err.Error())
 		return nil, err
 	}
 
@@ -94,6 +115,10 @@ func (us *UserService) GetUserInfo(c context.Context, phoneNumber string) (*User
 func (us *UserService) Login(c context.Context, phoneNumber, password string) (*AuthResponse, error) {
 	user, err := us.userRepository.FindByPhoneNumber(c, phoneNumber)
 	if err != nil {
+		us.logger.WithField("func", "login").
+			WithField("phone_number", phoneNumber).
+			WithField("error", err).
+			Errorf("could not find user by phone numbe: %s", err.Error())
 		return nil, err
 	}
 
@@ -104,6 +129,11 @@ func (us *UserService) Login(c context.Context, phoneNumber, password string) (*
 
 	accessToken, refreshToken, err := us.tokenProvider.GenerateTokenPair(c, user.ID, user.Uuid)
 	if err != nil {
+		us.logger.WithField("func", "login").
+			WithField("user_id", user.ID).
+			WithField("phone_number", phoneNumber).
+			WithField("error", err).
+			Errorf("could not generate pair token: %s", err.Error())
 		return nil, err
 	}
 
