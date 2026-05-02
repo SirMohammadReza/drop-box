@@ -1,8 +1,8 @@
 package grpc
 
 import (
+	proto "authentication/internal/proto/token"
 	"authentication/internal/token"
-	proto "authentication/internal/token/proto/token"
 	"context"
 
 	"google.golang.org/grpc/codes"

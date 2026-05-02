@@ -1,8 +1,8 @@
 package grpc
 
 import (
+	proto "authentication/internal/proto/user"
 	"authentication/internal/user"
-	proto "authentication/internal/user/proto/user"
 	"context"
 
 	"google.golang.org/protobuf/types/known/emptypb"
