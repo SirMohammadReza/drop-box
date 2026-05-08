@@ -12,7 +12,7 @@ type Provider interface {
 }
 
 type AuthResponse struct {
-	AccessToken  string `'json:"access_token"`
+	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	Name         string `json:"name"`
 	UUID         string `json:"uuid"`
