@@ -5,6 +5,8 @@ import (
 	"authentication/internal/user"
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -22,7 +24,7 @@ func NewUserHandler(up user.Provider) *UserHandler {
 func (uh *UserHandler) Login(c context.Context, req *proto.LoginRequest) (*proto.AuthResponse, error) {
 	response, err := uh.userProvider.Login(c, req.PhoneNumber, req.Password)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Unauthenticated, "invalid credentionals")
 	}
 
 	return &proto.AuthResponse{
@@ -35,7 +37,7 @@ func (uh *UserHandler) Login(c context.Context, req *proto.LoginRequest) (*proto
 
 func (uh *UserHandler) Logout(c context.Context, req *proto.LogoutRequset) (*emptypb.Empty, error) {
 	if err := uh.userProvider.Logout(c, req.Token); err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	return &emptypb.Empty{}, nil
@@ -44,7 +46,7 @@ func (uh *UserHandler) Logout(c context.Context, req *proto.LogoutRequset) (*emp
 func (uh *UserHandler) RegisterUser(c context.Context, req *proto.RegisterRequest) (*proto.AuthResponse, error) {
 	response, err := uh.userProvider.RegisterUser(c, req.Name, req.PhoneNumber, req.Password)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	return &proto.AuthResponse{
