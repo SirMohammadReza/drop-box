@@ -19,6 +19,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not connect to grpc: %v", err)
 	}
+	defer grpcConn.Close()
 
 	userClient := userPb.NewUserServiceClient(grpcConn)
 	tokenClient := tokenPb.NewTokenServiceClient(grpcConn)
