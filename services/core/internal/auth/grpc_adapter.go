@@ -4,6 +4,10 @@ import (
 	"context"
 	tokenPb "core/internal/proto/token"
 	userPb "core/internal/proto/user"
+	"fmt"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type grpcAdapter struct {
@@ -11,7 +15,7 @@ type grpcAdapter struct {
 	tokenClient tokenPb.TokenServiceClient
 }
 
-func NewGRPCAdapter(uc userPb.UserServiceClient, tc tokenPb.TokenServiceClient) *grpcAdapter {
+func NewGRPCAdapter(uc userPb.UserServiceClient, tc tokenPb.TokenServiceClient) Provider {
 	return &grpcAdapter{
 		userClient:  uc,
 		tokenClient: tc,
@@ -46,6 +50,10 @@ func (a *grpcAdapter) Login(c context.Context, phoneNumber, password string) (*A
 
 	res, err := a.userClient.Login(c, &req)
 	if err != nil {
+		st, ok := status.FromError(err)
+		if ok && st.Code() == codes.Unauthenticated {
+			return nil, fmt.Errorf("invalid credentionals")
+		}
 		return nil, err
 	}
 
@@ -64,6 +72,10 @@ func (a *grpcAdapter) Logout(c context.Context, token string) error {
 
 	_, err := a.userClient.Logout(c, &req)
 	if err != nil {
+		st, ok := status.FromError(err)
+		if ok && st.Code() == codes.Internal {
+			return fmt.Errorf("internal server error")
+		}
 		return err
 	}
 
@@ -77,6 +89,10 @@ func (a *grpcAdapter) IsTokenValid(c context.Context, token string) (*CheckToken
 
 	res, err := a.tokenClient.IsTokenValid(c, &req)
 	if err != nil {
+		st, ok := status.FromError(err)
+		if ok && st.Code() == codes.Unauthenticated {
+			return nil, fmt.Errorf("invalid token")
+		}
 		return nil, err
 	}
 
@@ -93,6 +109,10 @@ func (a *grpcAdapter) Refresh(c context.Context, refreshToken string) (*RefreshR
 
 	res, err := a.tokenClient.Refresh(c, &req)
 	if err != nil {
+		st, ok := status.FromError(err)
+		if ok && st.Code() == codes.Unauthenticated {
+			return nil, fmt.Errorf("invalid refresh token")
+		}
 		return nil, err
 	}
 
