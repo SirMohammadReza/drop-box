@@ -4,3 +4,6 @@
 [submodule "services/core/proto"]
 	path = services/core/proto
 	url = https://github.com/SirMohammadReza/protos.git
+[submodule "services/ingestion/proto"]
+	path = services/ingestion/proto
+	url = https://github.com/SirMohammadReza/protos.git
