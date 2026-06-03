@@ -8,6 +8,7 @@ import (
 
 type File struct {
 	ID        bson.ObjectID  `bson:"_id,omitempty"`
+	Status    FileStatus     `bson:"status"`
 	FolderID  *bson.ObjectID `bson:"folder_id"`
 	UserId    uint           `bson:"user_id"`
 	ObjectKey string         `bson:"object_key"`
