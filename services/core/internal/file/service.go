@@ -6,7 +6,9 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-type Provider interface{}
+type Provider interface {
+	NewFile(ctx context.Context, fi NewFileInputs) (*File, error)
+}
 
 type fileRepository interface {
 	Create(c context.Context, f *File) error
