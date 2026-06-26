@@ -34,7 +34,7 @@ func (uh *UploaderHandler) UploadFile(stream uploader.UploaderService_UploadFile
 	}
 
 	fileExt := filepath.Ext(metadata.FileName)
-	fileID := "1234"
+	fileID := metadata.FileId
 	dst := filepath.Join(uh.storageDir, fileID+fileExt)
 
 	go func() {
