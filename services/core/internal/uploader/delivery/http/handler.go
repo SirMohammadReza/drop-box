@@ -1,6 +1,7 @@
 package http
 
 import (
+	"core/internal/file"
 	"core/internal/uploader"
 	"net/http"
 
@@ -9,11 +10,13 @@ import (
 
 type Handler struct {
 	uploaderProvider uploader.Provider
+	fileService      file.Provider
 }
 
-func NewHandler(up uploader.Provider) *Handler {
+func NewHandler(up uploader.Provider, fs file.Provider) *Handler {
 	return &Handler{
 		uploaderProvider: up,
+		fileService:      fs,
 	}
 }
 
