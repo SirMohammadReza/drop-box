@@ -25,6 +25,7 @@ func (a *grpcAdapter) UploadFile(c context.Context, meta Metadata, data io.Reade
 	err = stream.Send(&uploaderPb.UploadRequest{
 		Data: &uploaderPb.UploadRequest_Metadata{
 			Metadata: &uploaderPb.Metadata{
+				FileId:   meta.FileID,
 				FileName: meta.FileName,
 				UserUuid: meta.UserUUID,
 				Size:     meta.Size,

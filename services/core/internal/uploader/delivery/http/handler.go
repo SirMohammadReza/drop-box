@@ -25,19 +25,34 @@ func (h *Handler) RegisterRoutes(g *echo.Group) {
 }
 
 func (h *Handler) UploadFile(c *echo.Context) error {
-	file, header, err := c.Request().FormFile("file")
+	requestFile, header, err := c.Request().FormFile("file")
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer requestFile.Close()
+
+	buffer := make([]byte, 512)
+	_, err = requestFile.Read(buffer)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "failed to read file")
+	}
+
+	fileDTO := file.NewFileInputs{
+		Name:     header.Filename,
+		Size:     header.Size,
+		MimeType: http.DetectContentType(buffer),
+	}
+
+	newFile, err := h.fileService.NewFile(c.Request().Context(), fileDTO)
 
 	meta := uploader.Metadata{
-		FileName: header.Filename,
-		Size:     header.Size,
+		FileID:   newFile.ID.Hex(),
+		FileName: newFile.Name,
+		Size:     newFile.Size,
 		UserUUID: "user-1",
 	}
 
-	res, err := h.uploaderProvider.UploadFile(c.Request().Context(), meta, file)
+	res, err := h.uploaderProvider.UploadFile(c.Request().Context(), meta, requestFile)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}

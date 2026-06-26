@@ -5,6 +5,8 @@ import (
 
 	"core/internal/auth"
 	authHttp "core/internal/auth/delivery/http"
+	"core/internal/file"
+	"core/internal/platform/mongo"
 	tokenPb "core/internal/proto/token"
 	uploaderPb "core/internal/proto/uploader"
 	userPb "core/internal/proto/user"
@@ -24,6 +26,8 @@ func main() {
 	}
 	defer grpcConn.Close()
 
+	mongoClient := mongo.ConnetMongo()
+
 	userClient := userPb.NewUserServiceClient(grpcConn)
 	tokenClient := tokenPb.NewTokenServiceClient(grpcConn)
 	uploaderClient := uploaderPb.NewUploaderServiceClient(grpcConn)
@@ -31,8 +35,11 @@ func main() {
 	authProvider := auth.NewGRPCAdapter(userClient, tokenClient)
 	authHandler := authHttp.NewHandler(authProvider)
 
+	fileRepo := file.NewMongoRepository(mongoClient)
+	fileService := file.NewFileService(fileRepo)
+
 	uploaderProvider := uploader.NewGRPCAdapter(uploaderClient)
-	uploaderHandler := uploaderHttp.NewHandler(uploaderProvider)
+	uploaderHandler := uploaderHttp.NewHandler(uploaderProvider, fileService)
 
 	e := echo.New()
 	e.Use(middleware.RequestLogger())

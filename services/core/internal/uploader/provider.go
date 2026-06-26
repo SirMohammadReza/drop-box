@@ -10,6 +10,7 @@ type Provider interface {
 }
 
 type Metadata struct {
+	FileID   string `json:"file_id"`
 	FileName string `json:"file_name"`
 	UserUUID string `json:"user_uuid"`
 	Size     int64  `json:"size"`
