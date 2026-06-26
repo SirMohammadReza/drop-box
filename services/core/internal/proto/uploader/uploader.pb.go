@@ -23,9 +23,10 @@ const (
 
 type Metadata struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FileName      string                 `protobuf:"bytes,1,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
-	UserUuid      string                 `protobuf:"bytes,2,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
-	Size          int64                  `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	FileName      string                 `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	UserUuid      string                 `protobuf:"bytes,3,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	Size          int64                  `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -58,6 +59,13 @@ func (x *Metadata) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Metadata.ProtoReflect.Descriptor instead.
 func (*Metadata) Descriptor() ([]byte, []int) {
 	return file_proto_uploader_uploader_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Metadata) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
 }
 
 func (x *Metadata) GetFileName() string {
@@ -219,11 +227,12 @@ var File_proto_uploader_uploader_proto protoreflect.FileDescriptor
 
 const file_proto_uploader_uploader_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/uploader/uploader.proto\x12\buploader\"X\n" +
-	"\bMetadata\x12\x1b\n" +
-	"\tfile_name\x18\x01 \x01(\tR\bfileName\x12\x1b\n" +
-	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12\x12\n" +
-	"\x04size\x18\x03 \x01(\x03R\x04size\"a\n" +
+	"\x1dproto/uploader/uploader.proto\x12\buploader\"q\n" +
+	"\bMetadata\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12\x1b\n" +
+	"\tfile_name\x18\x02 \x01(\tR\bfileName\x12\x1b\n" +
+	"\tuser_uuid\x18\x03 \x01(\tR\buserUuid\x12\x12\n" +
+	"\x04size\x18\x04 \x01(\x03R\x04size\"a\n" +
 	"\rUploadRequest\x120\n" +
 	"\bmetadata\x18\x01 \x01(\v2\x12.uploader.MetadataH\x00R\bmetadata\x12\x16\n" +
 	"\x05chunk\x18\x02 \x01(\fH\x00R\x05chunkB\x06\n" +
