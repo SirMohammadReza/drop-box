@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"core/internal/auth"
 	authHttp "core/internal/auth/delivery/http"
 	"core/internal/file"
-	"core/internal/platform/mongo"
+	mongoDB "core/internal/platform/mongo"
 	tokenPb "core/internal/proto/token"
 	uploaderPb "core/internal/proto/uploader"
 	userPb "core/internal/proto/user"
@@ -15,44 +20,71 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
-	grpcConn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("could not connect to grpc: %v", err)
+	mongoClient := mongoDB.ConnetMongo()
+
+	e := echo.New()
+	e.Use(middleware.RequestLogger())
+	e.Use(middleware.Recover())
+
+	v1 := e.Group("/api/v1")
+
+	authConn := authInit(v1)
+	defer authConn.Close()
+
+	ingestionConn := ingestionInit(v1, mongoClient)
+	defer ingestionConn.Close()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	sc := echo.StartConfig{
+		Address:         ":8080",
+		GracefulTimeout: 10 * time.Second,
 	}
-	defer grpcConn.Close()
 
-	mongoClient := mongo.ConnetMongo()
+	if err := sc.Start(ctx, e); err != nil {
+		log.Fatal("server error:", err)
+	}
+}
 
-	userClient := userPb.NewUserServiceClient(grpcConn)
-	tokenClient := tokenPb.NewTokenServiceClient(grpcConn)
-	uploaderClient := uploaderPb.NewUploaderServiceClient(grpcConn)
+func ingestionInit(echoGroup *echo.Group, mc *mongo.Client) *grpc.ClientConn {
+	conn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("could not connect to ingestion grpc: %v", err)
+	}
 
-	authProvider := auth.NewGRPCAdapter(userClient, tokenClient)
-	authHandler := authHttp.NewHandler(authProvider)
+	uploaderClient := uploaderPb.NewUploaderServiceClient(conn)
 
-	fileRepo := file.NewMongoRepository(mongoClient)
+	fileRepo := file.NewMongoRepository(mc)
 	fileService := file.NewFileService(fileRepo)
 
 	uploaderProvider := uploader.NewGRPCAdapter(uploaderClient)
 	uploaderHandler := uploaderHttp.NewHandler(uploaderProvider, fileService)
 
-	e := echo.New()
-	e.Use(middleware.RequestLogger())
-	e.Use(middleware.Recover())
-	api := e.Group("/api")
-	v1 := api.Group("/v1")
-	apiGroup := v1.Group("/auth")
-	authHandler.RegisterRoutes(apiGroup)
+	uploaderHandler.RegisterRoutes(echoGroup.Group("/files"))
 
-	apiGroup = v1.Group("/files")
-	uploaderHandler.RegisterRoutes(apiGroup)
+	return conn
+}
 
-	if err := e.Start(":8080"); err != nil {
-		log.Fatalf("could not start app: %v", err)
+func authInit(echoGroup *echo.Group) *grpc.ClientConn {
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("could not connect to authenticationgrpc: %v", err)
 	}
+
+	userClient := userPb.NewUserServiceClient(conn)
+	tokenClient := tokenPb.NewTokenServiceClient(conn)
+
+	authProvider := auth.NewGRPCAdapter(userClient, tokenClient)
+	authHandler := authHttp.NewHandler(authProvider)
+
+	authHandler.RegisterRoutes(echoGroup.Group("/auth"))
+
+	return conn
 }
