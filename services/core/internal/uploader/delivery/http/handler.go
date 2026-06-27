@@ -3,6 +3,7 @@ package http
 import (
 	"core/internal/file"
 	"core/internal/uploader"
+	"io"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
@@ -32,9 +33,12 @@ func (h *Handler) UploadFile(c *echo.Context) error {
 	defer requestFile.Close()
 
 	buffer := make([]byte, 512)
-	_, err = requestFile.Read(buffer)
-	if err != nil {
+	if _, err = requestFile.Read(buffer); err != nil {
 		return c.JSON(http.StatusBadRequest, "failed to read file")
+	}
+
+	if _, err = requestFile.Seek(0, io.SeekStart); err != nil {
+		return c.JSON(http.StatusInternalServerError, "failed to seek file")
 	}
 
 	fileDTO := file.NewFileInputs{
@@ -44,6 +48,9 @@ func (h *Handler) UploadFile(c *echo.Context) error {
 	}
 
 	newFile, err := h.fileService.NewFile(c.Request().Context(), fileDTO)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "failed to create file record")
+	}
 
 	meta := uploader.Metadata{
 		FileID:   newFile.ID.Hex(),
