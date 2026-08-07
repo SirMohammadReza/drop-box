@@ -111,11 +111,3 @@ func writeChunks(stream uploader.UploaderService_UploadFileServer, w io.Writer) 
 
 	return nil
 }
-
-// func isSubPath(base, target string) bool {
-// 	rel, err := filepath.Rel(base, target)
-// 	if err != nil {
-// 		return false
-// 	}
-// 	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
-// }
