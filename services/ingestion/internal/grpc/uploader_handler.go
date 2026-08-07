@@ -2,12 +2,12 @@ package grpc
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"ingestion/internal/proto/uploader"
 	"io"
-	"os"
-	"path/filepath"
+	"path"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -16,16 +16,22 @@ import (
 
 const maxFileNameLen = 255
 
+type FileStorage interface {
+	Create(ctx context.Context, name string) (io.WriteCloser, error)
+	Remove(ctx context.Context, name string) error
+}
 type UploaderHandler struct {
 	uploader.UnimplementedUploaderServiceServer
-	storageDir string
+	storage FileStorage
 }
 
-func NewUploaderHandler(storageDir string) *UploaderHandler {
-	return &UploaderHandler{storageDir: storageDir}
+func NewUploaderHandler(storage FileStorage) *UploaderHandler {
+	return &UploaderHandler{storage: storage}
 }
 
 func (h *UploaderHandler) UploadFile(stream uploader.UploaderService_UploadFileServer) error {
+	ctx := stream.Context()
+
 	firstReq, err := stream.Recv()
 	if err != nil {
 		return status.Errorf(codes.Internal, "reading first message: %v", err)
@@ -36,25 +42,25 @@ func (h *UploaderHandler) UploadFile(stream uploader.UploaderService_UploadFileS
 		return status.Error(codes.InvalidArgument, "first message must contains metadata")
 	}
 
-	dst, err := h.destinationPath(metadata)
+	name, err := objectName(metadata)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "invalid metadata: %v", err)
 	}
 
-	file, err := os.Create(dst)
+	w, err := h.storage.Create(ctx, name)
 	if err != nil {
-		return status.Errorf(codes.Internal, "creating destination file: %v", err)
+		return status.Errorf(codes.Internal, "creating destination object: %v", err)
 	}
 
-	if err := writeChunks(stream, file); err != nil {
-		file.Close()
-		os.Remove(dst)
+	if err := writeChunks(stream, w); err != nil {
+		w.Close()
+		h.storage.Remove(ctx, name)
 		return err
 	}
 
-	if err := file.Close(); err != nil {
-		os.Remove(dst)
-		return status.Errorf(codes.Internal, "closing file: %v", err)
+	if err := w.Close(); err != nil {
+		h.storage.Remove(ctx, name)
+		return status.Errorf(codes.Internal, "closing object: %v", err)
 	}
 
 	return stream.SendAndClose(&uploader.UploadResponse{
@@ -63,7 +69,7 @@ func (h *UploaderHandler) UploadFile(stream uploader.UploaderService_UploadFileS
 	})
 }
 
-func (h *UploaderHandler) destinationPath(metadata *uploader.Metadata) (string, error) {
+func objectName(metadata *uploader.Metadata) (string, error) {
 	if metadata.FileId == "" {
 		return "", errors.New("file_id is required")
 	}
@@ -73,17 +79,12 @@ func (h *UploaderHandler) destinationPath(metadata *uploader.Metadata) (string, 
 	if len(metadata.FileName) > maxFileNameLen {
 		return "", fmt.Errorf("file_name exceeds %d characters", maxFileNameLen)
 	}
-	if filepath.Base(metadata.FileId) != metadata.FileId {
+	if metadata.FileId != path.Base(metadata.FileId) || strings.Contains(metadata.FileId, "..") {
 		return "", errors.New("file_id must not contain path separators")
 	}
 
-	ext := filepath.Ext(metadata.FileName)
-	dst := filepath.Join(h.storageDir, metadata.FileId+ext)
-	if !isSubPath(h.storageDir, dst) {
-		return "", errors.New("resolved path escapes storage directory")
-	}
-
-	return dst, nil
+	ext := path.Ext(metadata.FileName)
+	return "raw/" + metadata.FileId + ext, nil
 }
 
 func writeChunks(stream uploader.UploaderService_UploadFileServer, w io.Writer) error {
@@ -111,10 +112,10 @@ func writeChunks(stream uploader.UploaderService_UploadFileServer, w io.Writer) 
 	return nil
 }
 
-func isSubPath(base, target string) bool {
-	rel, err := filepath.Rel(base, target)
-	if err != nil {
-		return false
-	}
-	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
-}
+// func isSubPath(base, target string) bool {
+// 	rel, err := filepath.Rel(base, target)
+// 	if err != nil {
+// 		return false
+// 	}
+// 	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+// }
