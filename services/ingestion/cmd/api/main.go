@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ingestion/internal/messaging"
 	"ingestion/internal/platform/storage"
 	"log"
 	"net"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"google.golang.org/grpc"
 )
 
@@ -21,8 +24,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create minio client: %v", err)
 	}
-
 	fileStorage := storage.NewMinioStorage(minioClient, "drive-files")
+
+	nc, err := nats.Connect("nats://localhost:4222")
+	if err != nil {
+		log.Fatalf("failed to connect to nats: %v", err)
+	}
+	js, err := jetstream.New(nc)
+	if err != nil {
+		log.Fatalf("failed to init jetstream: %v", err)
+	}
+	publisher := messaging.NewNatsPublisher(js, "files.uploaded")
 
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
@@ -30,7 +42,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	uplaoderHandler := grpcHandlers.NewUploaderHandler(fileStorage)
+	uplaoderHandler := grpcHandlers.NewUploaderHandler(fileStorage, publisher)
 	uploaderPb.RegisterUploaderServiceServer(s, uplaoderHandler)
 
 	log.Print("app started...")

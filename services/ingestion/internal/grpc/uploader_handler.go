@@ -22,11 +22,24 @@ type FileStorage interface {
 }
 type UploaderHandler struct {
 	uploader.UnimplementedUploaderServiceServer
-	storage FileStorage
+	storage   FileStorage
+	publisher EventPublisher
 }
 
-func NewUploaderHandler(storage FileStorage) *UploaderHandler {
-	return &UploaderHandler{storage: storage}
+type FileUploadEvent struct {
+	FileID    string `json:"file_id"`
+	ObjectKet string `json:"object_key"`
+	FileName  string `json:"file_name"`
+	UserUuid  string `json:"user_uuid"`
+	Size      uint64 `json:"size"`
+}
+
+type EventPublisher interface {
+	PublishFileUploaded(ctx context.Context, event FileUploadEvent) error
+}
+
+func NewUploaderHandler(storage FileStorage, publisher EventPublisher) *UploaderHandler {
+	return &UploaderHandler{storage: storage, publisher: publisher}
 }
 
 func (h *UploaderHandler) UploadFile(stream uploader.UploaderService_UploadFileServer) error {
@@ -61,6 +74,17 @@ func (h *UploaderHandler) UploadFile(stream uploader.UploaderService_UploadFileS
 	if err := w.Close(); err != nil {
 		h.storage.Remove(ctx, name)
 		return status.Errorf(codes.Internal, "closing object: %v", err)
+	}
+
+	event := FileUploadEvent{
+		FileID:    metadata.FileId,
+		ObjectKet: name,
+		FileName:  metadata.FileName,
+		UserUuid:  metadata.UserUuid,
+	}
+	if err := h.publisher.PublishFileUploaded(ctx, event); err != nil {
+		h.storage.Remove(ctx, name)
+		return status.Errorf(codes.Internal, "publishing upload event: %v", err)
 	}
 
 	return stream.SendAndClose(&uploader.UploadResponse{
