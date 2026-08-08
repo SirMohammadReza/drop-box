@@ -41,14 +41,17 @@ func main() {
 	publisher := messaging.NewNatsPublisher(js, "files.processed")
 	processor := worker.NewFileprocessor(fileStorage, publisher)
 
-	stream, err := js.Stream(ctx, "UPLOADS")
+	stream, err := js.Stream(ctx, "FILES")
 	if err != nil {
 		log.Fatalf("stream lookup: %v", err)
 	}
-
-	consumer, err := stream.Consumer(ctx, "file-worker")
+	consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
+		Durable:       "file-worker",
+		FilterSubject: "files.uploaded",
+		AckPolicy:     jetstream.AckExplicitPolicy,
+	})
 	if err != nil {
-		log.Fatalf("consumer lookup: %v", err)
+		log.Fatalf("ensuring consumer: %v", err)
 	}
 
 	natsConsumer := messaging.NewNatsConsumer(consumer, processor)

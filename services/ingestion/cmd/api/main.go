@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"ingestion/internal/messaging"
 	"ingestion/internal/platform/storage"
 	"log"
 	"net"
+	"time"
 
 	grpcHandlers "ingestion/internal/grpc"
 	uploaderPb "ingestion/internal/proto/uploader"
@@ -33,6 +35,18 @@ func main() {
 	js, err := jetstream.New(nc)
 	if err != nil {
 		log.Fatalf("failed to init jetstream: %v", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err = js.CreateOrUpdateStream(ctx, jetstream.StreamConfig{
+		Name:      "FILES",
+		Subjects:  []string{"files.>"},
+		Storage:   jetstream.FileStorage,
+		Retention: jetstream.LimitsPolicy,
+		MaxAge:    7 * 24 * time.Hour,
+	})
+	if err != nil {
+		log.Fatalf("ensuring FILES stream: %v", err)
 	}
 	publisher := messaging.NewNatsPublisher(js, "files.uploaded")
 
