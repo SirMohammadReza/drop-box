@@ -28,7 +28,7 @@ type UploaderHandler struct {
 
 type FileUploadEvent struct {
 	FileID    string `json:"file_id"`
-	ObjectKet string `json:"object_key"`
+	ObjectKey string `json:"object_key"`
 	FileName  string `json:"file_name"`
 	UserUuid  string `json:"user_uuid"`
 	Size      uint64 `json:"size"`
@@ -78,7 +78,7 @@ func (h *UploaderHandler) UploadFile(stream uploader.UploaderService_UploadFileS
 
 	event := FileUploadEvent{
 		FileID:    metadata.FileId,
-		ObjectKet: name,
+		ObjectKey: name,
 		FileName:  metadata.FileName,
 		UserUuid:  metadata.UserUuid,
 	}
