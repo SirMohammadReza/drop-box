@@ -50,7 +50,7 @@ func (fp *FileProcessor) ProcessUpload(ctx context.Context, event UploadedEvent)
 	}
 	defer raw.Close()
 
-	processedKey := "processed/" + strings.TrimPrefix(event.ObjectKey, "raw/")
+	processedKey := "processed/" + strings.TrimPrefix(event.ObjectKey, "raw/") + ".gz"
 	dst, err := fp.storage.Create(ctx, processedKey)
 	if err != nil {
 		return fmt.Errorf("creating processed object: %w", err)
