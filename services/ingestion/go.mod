@@ -3,6 +3,8 @@ module ingestion
 go 1.26.2
 
 require (
+	github.com/caarlos0/env v3.5.0+incompatible
+	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.2.1
 	github.com/nats-io/nats.go v1.52.0
 	google.golang.org/grpc v1.81.0

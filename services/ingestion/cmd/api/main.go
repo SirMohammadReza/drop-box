@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"ingestion/internal/config"
 	"ingestion/internal/messaging"
 	"ingestion/internal/platform/storage"
 	"log"
@@ -11,6 +13,8 @@ import (
 	grpcHandlers "ingestion/internal/grpc"
 	uploaderPb "ingestion/internal/proto/uploader"
 
+	"github.com/caarlos0/env"
+	"github.com/joho/godotenv"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/nats-io/nats.go"
@@ -18,9 +22,13 @@ import (
 	"google.golang.org/grpc"
 )
 
+var cfg config.Config
+
 func main() {
-	minioClient, err := minio.New("localhost:9000", &minio.Options{
-		Creds:  credentials.NewStaticV4("admin", "password123", ""),
+	setEnv(&cfg)
+
+	minioClient, err := minio.New(fmt.Sprintf("%s:%d", cfg.MinioURL, cfg.MinioPort), &minio.Options{
+		Creds:  credentials.NewStaticV4(cfg.MinioID, cfg.MinioSecret, ""),
 		Secure: false,
 	})
 	if err != nil {
@@ -28,7 +36,7 @@ func main() {
 	}
 	fileStorage := storage.NewMinioStorage(minioClient, "drive-files")
 
-	nc, err := nats.Connect("nats://localhost:4222")
+	nc, err := nats.Connect(fmt.Sprintf("%s:%d", cfg.NatsURL, cfg.NatsPort))
 	if err != nil {
 		log.Fatalf("failed to connect to nats: %v", err)
 	}
@@ -50,9 +58,9 @@ func main() {
 	}
 	publisher := messaging.NewNatsPublisher(js, "files.uploaded")
 
-	lis, err := net.Listen("tcp", ":50052")
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
-		log.Fatalf("failed to listen on 50052: %v", err)
+		log.Fatalf("failed to listen on %d: %v", cfg.GRPCPort, err)
 	}
 
 	s := grpc.NewServer()
@@ -63,5 +71,15 @@ func main() {
 
 	if err = s.Serve(lis); err != nil {
 		log.Fatalf("could not run app: %v", err)
+	}
+}
+
+func setEnv(cfg *config.Config) {
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("loading env: %v", err)
+	}
+
+	if err := env.Parse(cfg); err != nil {
+		log.Fatalf("parse env: %v", err)
 	}
 }
