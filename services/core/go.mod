@@ -3,6 +3,9 @@ module core
 go 1.25.6
 
 require (
+	github.com/caarlos0/env v3.5.0+incompatible
+	github.com/caarlos0/env/v11 v11.4.1
+	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.1.1
 	go.mongodb.org/mongo-driver/v2 v2.5.0
 	google.golang.org/grpc v1.80.0

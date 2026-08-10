@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -10,6 +11,7 @@ import (
 
 	"core/internal/auth"
 	authHttp "core/internal/auth/delivery/http"
+	"core/internal/config"
 	"core/internal/file"
 	mongoDB "core/internal/platform/mongo"
 	tokenPb "core/internal/proto/token"
@@ -18,6 +20,8 @@ import (
 	"core/internal/uploader"
 	uploaderHttp "core/internal/uploader/delivery/http"
 
+	"github.com/caarlos0/env"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -25,8 +29,12 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+var cfg config.Config
+
 func main() {
-	mongoClient := mongoDB.ConnetMongo()
+	setEnv()
+
+	mongoClient := mongoDB.ConnetMongo(&cfg)
 
 	e := echo.New()
 	e.Use(middleware.RequestLogger())
@@ -54,7 +62,7 @@ func main() {
 }
 
 func ingestionInit(echoGroup *echo.Group, mc *mongo.Client) *grpc.ClientConn {
-	conn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(fmt.Sprintf("%s:%d", cfg.GRPCURL, cfg.GRPCIngestionPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("could not connect to ingestion grpc: %v", err)
 	}
@@ -73,7 +81,7 @@ func ingestionInit(echoGroup *echo.Group, mc *mongo.Client) *grpc.ClientConn {
 }
 
 func authInit(echoGroup *echo.Group) *grpc.ClientConn {
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(fmt.Sprintf("%s:%d", cfg.GRPCURL, cfg.GRPCAuthPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("could not connect to authenticationgrpc: %v", err)
 	}
@@ -87,4 +95,14 @@ func authInit(echoGroup *echo.Group) *grpc.ClientConn {
 	authHandler.RegisterRoutes(echoGroup.Group("/auth"))
 
 	return conn
+}
+
+func setEnv() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("loading env: %v", err)
+	}
+
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("parsing env: %v", err)
+	}
 }

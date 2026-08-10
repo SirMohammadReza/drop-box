@@ -2,6 +2,8 @@ package mongo
 
 import (
 	"context"
+	"core/internal/config"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -15,9 +17,9 @@ var (
 	once        sync.Once
 )
 
-func ConnetMongo() *mongo.Client {
+func ConnetMongo(cfg *config.Config) *mongo.Client {
 	once.Do(func() {
-		uri := "mongodb://admin:4321@localhost:27017"
+		uri := fmt.Sprintf("mongodb://%s:%s@%s:%d", cfg.MongoUsername, cfg.MongoPassword, cfg.MongoURL, cfg.MongoPort)
 
 		clientOption := options.Client().ApplyURI(uri)
 
