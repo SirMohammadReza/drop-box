@@ -3,6 +3,9 @@ module file_worker
 go 1.26.3
 
 require (
+	github.com/caarlos0/env v3.5.0+incompatible
+	github.com/caarlos0/env/v11 v11.4.1
+	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.2.1
 	github.com/nats-io/nats.go v1.52.0
 )
