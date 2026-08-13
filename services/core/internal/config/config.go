@@ -9,4 +9,7 @@ type Config struct {
 	MongoPort     int    `env:"MONGO_PORT,required"`
 	MongoUsername string `env:"MONGO_USERNAME,required"`
 	MongoPassword string `env:"MONGO_PASSWORD,required"`
+
+	NatsURL  string `env:"NATS_URL,required"`
+	NatsPort int    `env:"NATS_PORT,required"`
 }

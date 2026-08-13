@@ -60,3 +60,10 @@ func (mr *MongoRepository) Copy(c context.Context, f File, destinationFolderID *
 	_, err := mr.collection.InsertOne(c, f)
 	return err
 }
+
+func (mr *MongoRepository) UpdateStatus(ctx context.Context, fileID string, status FileStatus) error {
+	filter := bson.M{"_id": fileID}
+	update := bson.M{"$set": bson.M{"status": status, "updated_at": time.Now()}}
+	_, err := mr.collection.UpdateOne(ctx, filter, update)
+	return err
+}

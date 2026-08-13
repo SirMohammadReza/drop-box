@@ -13,10 +13,12 @@ import (
 	authHttp "core/internal/auth/delivery/http"
 	"core/internal/config"
 	"core/internal/file"
+	"core/internal/platform/messaging"
 	mongoDB "core/internal/platform/mongo"
 	tokenPb "core/internal/proto/token"
 	uploaderPb "core/internal/proto/uploader"
 	userPb "core/internal/proto/user"
+	"core/internal/status"
 	"core/internal/uploader"
 	uploaderHttp "core/internal/uploader/delivery/http"
 
@@ -24,6 +26,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -33,6 +37,9 @@ var cfg config.Config
 
 func main() {
 	setEnv()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	mongoClient := mongoDB.ConnetMongo(&cfg)
 
@@ -48,8 +55,11 @@ func main() {
 	ingestionConn := ingestionInit(v1, mongoClient)
 	defer ingestionConn.Close()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	fileRepo := file.NewMongoRepository(mongoClient)
+
+	natsConn, consumectx := natsInit(ctx, fileRepo)
+	defer natsConn.Close()
+	defer consumectx.Stop()
 
 	sc := echo.StartConfig{
 		Address:         ":8080",
@@ -105,4 +115,40 @@ func setEnv() {
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatalf("parsing env: %v", err)
 	}
+}
+
+func natsInit(ctx context.Context, fileRepo *file.MongoRepository) (*nats.Conn, jetstream.ConsumeContext) {
+	nc, err := nats.Connect(fmt.Sprintf("%s:%d", cfg.NatsURL, cfg.NatsPort))
+	if err != nil {
+		log.Fatalf("could not connect to nats: %v", err)
+	}
+
+	js, err := jetstream.New(nc)
+	if err != nil {
+		log.Fatalf("could not init jetstream: %v", err)
+	}
+
+	stream, err := js.Stream(ctx, "FILES")
+	if err != nil {
+		log.Fatalf("stream lookup (is ingestion running?): %v", err)
+	}
+
+	consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
+		Durable:       "core-status-updater",
+		FilterSubject: "files.uploaded",
+		AckPolicy:     jetstream.AckExplicitPolicy,
+	})
+	if err != nil {
+		log.Fatalf("ensuring nats consumer: %v", err)
+	}
+
+	statusConsumer := status.NewZippingStatusConsumer(fileRepo)
+	natsConsumer := messaging.NewNatsConsumer(consumer, statusConsumer)
+
+	consumeCtx, err := natsConsumer.Start(ctx)
+	if err != nil {
+		log.Fatalf("starting nats consumer: %v", err)
+	}
+
+	return nc, consumeCtx
 }
